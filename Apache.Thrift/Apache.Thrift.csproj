@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>Apache</RootNamespace>
+    <Authors>Timothy R. McNealy</Authors>
+    <Company>Timothy R. McNealy</Company>
+    <Copyright>© Timothy R. McNealy</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/trmcnealy/Apache.Thrift</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/trmcnealy/Apache.Thrift</RepositoryUrl>
+    <Version>0.1.0</Version>
+    <PackageOutputPath Condition="'$(PACKAGE_CACHE)'!=''">$(PACKAGE_CACHE)</PackageOutputPath>
+    <PackageOutputPath Condition="'$(PACKAGE_CACHE)'==''">$(OutputPath)</PackageOutputPath>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Remove="Apache.Thrift.csproj.DotSettings" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
+    <PackageReference Include="System.IO.Pipes" Version="4.3.0" />
+    <PackageReference Include="System.IO.Pipes.AccessControl" Version="4.5.1" />
+  </ItemGroup>
+  
+</Project>
