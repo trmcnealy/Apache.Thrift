@@ -5,9 +5,9 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License. You may obtain a copy of the License at
-// 
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,10 +30,10 @@ namespace Apache.Thrift.Transport
             Configuration = config ?? new TConfiguration();
         }
 
+        public abstract bool IsOpen();
+
         public abstract void Listen();
-
         public abstract void Close();
-
         public abstract bool IsClientPending();
 
         protected virtual async ValueTask<TTransport> AcceptImplementationAsync()
@@ -50,9 +50,9 @@ namespace Apache.Thrift.Transport
 
         public async ValueTask<TTransport> AcceptAsync(CancellationToken cancellationToken)
         {
-            TTransport transport = await AcceptImplementationAsync(cancellationToken);
+            var transport = await AcceptImplementationAsync(cancellationToken);
 
-            if(transport == null)
+            if (transport == null)
             {
                 throw new TTransportException($"{nameof(AcceptImplementationAsync)} should not return null");
             }

@@ -10,7 +10,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/trmcnealy/Apache.Thrift</PackageProjectUrl>
     <RepositoryUrl>https://github.com/trmcnealy/Apache.Thrift</RepositoryUrl>
-    <Version>0.2.0</Version>
+    <Version>0.3.1</Version>
     <PackageOutputPath Condition="'$(PACKAGE_CACHE)'!=''">$(PACKAGE_CACHE)</PackageOutputPath>
     <PackageOutputPath Condition="'$(PACKAGE_CACHE)'==''">$(OutputPath)</PackageOutputPath>
     <PackageId>Apache.Thrift.NET</PackageId>

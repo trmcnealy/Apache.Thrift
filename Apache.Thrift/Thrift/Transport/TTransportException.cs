@@ -38,30 +38,23 @@ namespace Apache.Thrift.Transport
         {
         }
 
-        public TTransportException(ExceptionType exType,
-                                   Exception     inner = null)
-            : base(string.Empty,
-                   inner)
+        public TTransportException(ExceptionType exType, Exception inner = null)
+            : base(string.Empty, inner)
         {
             ExType = exType;
         }
 
-        public TTransportException(ExceptionType exType,
-                                   string        message,
-                                   Exception     inner = null)
-            : base(message,
-                   inner)
+        public TTransportException(ExceptionType exType, string message, Exception inner = null)
+            : base(message, inner)
         {
             ExType = exType;
         }
 
-        public TTransportException(string    message,
-                                   Exception inner = null)
-            : base(message,
-                   inner)
+        public TTransportException(string message, Exception inner = null)
+            : base(message, inner)
         {
         }
 
-        public ExceptionType Type { get { return ExType; } }
+        public ExceptionType Type => ExType;
     }
 }

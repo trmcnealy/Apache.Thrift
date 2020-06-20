@@ -23,7 +23,6 @@ namespace Apache.Thrift.Processor
     // ReSharper disable once InconsistentNaming
     public interface ITProcessorFactory
     {
-        ITAsyncProcessor GetAsyncProcessor(TTransport trans,
-                                           TServer    baseServer = null);
+        ITAsyncProcessor GetAsyncProcessor(TTransport trans, TServer baseServer = null);
     }
 }

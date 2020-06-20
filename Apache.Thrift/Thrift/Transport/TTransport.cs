@@ -29,16 +29,12 @@ namespace Apache.Thrift.Transport
     {
         //TODO: think how to avoid peek byte
         private readonly byte[] _peekBuffer = new byte[1];
-        private          bool   _hasPeekByte;
+        private bool _hasPeekByte;
 
         public abstract bool IsOpen { get; }
-
         public abstract TConfiguration Configuration { get; }
-
         public abstract void UpdateKnownMessageSize(long size);
-
         public abstract void CheckReadBytesAvailable(long numBytes);
-
         public void Dispose()
         {
             Dispose(true);
@@ -48,13 +44,13 @@ namespace Apache.Thrift.Transport
         public async ValueTask<bool> PeekAsync(CancellationToken cancellationToken)
         {
             //If we already have a byte read but not consumed, do nothing.
-            if(_hasPeekByte)
+            if (_hasPeekByte)
             {
                 return true;
             }
 
             //If transport closed we can't peek.
-            if(!IsOpen)
+            if (!IsOpen)
             {
                 return false;
             }
@@ -62,40 +58,29 @@ namespace Apache.Thrift.Transport
             //Try to read one byte. If succeeds we will need to store it for the next read.
             try
             {
-                int bytes = await ReadAsync(_peekBuffer,
-                                            0,
-                                            1,
-                                            cancellationToken);
-
-                if(bytes == 0)
+                var bytes = await ReadAsync(_peekBuffer, 0, 1, cancellationToken);
+                if (bytes == 0)
                 {
                     return false;
                 }
             }
-            catch(IOException)
+            catch (IOException)
             {
                 return false;
             }
 
             _hasPeekByte = true;
-
             return true;
         }
 
-        public virtual async Task OpenAsync()
-        {
-            await OpenAsync(CancellationToken.None);
-        }
 
-        public abstract Task OpenAsync(CancellationToken cancellationToken);
+        public abstract Task OpenAsync(CancellationToken cancellationToken = default);
 
         public abstract void Close();
 
-        protected static void ValidateBufferArgs(byte[] buffer,
-                                                 int    offset,
-                                                 int    length)
+        protected static void ValidateBufferArgs(byte[] buffer, int offset, int length)
         {
-            if(buffer == null)
+            if (buffer == null)
             {
                 throw new ArgumentNullException(nameof(buffer));
             }
@@ -118,128 +103,64 @@ namespace Apache.Thrift.Transport
 #endif
         }
 
-        public virtual async ValueTask<int> ReadAsync(byte[] buffer,
-                                                      int    offset,
-                                                      int    length)
+
+        public abstract ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
+
+        public virtual async ValueTask<int> ReadAllAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            return await ReadAsync(buffer,
-                                   offset,
-                                   length,
-                                   CancellationToken.None);
-        }
+            cancellationToken.ThrowIfCancellationRequested();
 
-        public abstract ValueTask<int> ReadAsync(byte[]            buffer,
-                                                 int               offset,
-                                                 int               length,
-                                                 CancellationToken cancellationToken);
-
-        public virtual async ValueTask<int> ReadAllAsync(byte[] buffer,
-                                                         int    offset,
-                                                         int    length)
-        {
-            return await ReadAllAsync(buffer,
-                                      offset,
-                                      length,
-                                      CancellationToken.None);
-        }
-
-        public virtual async ValueTask<int> ReadAllAsync(byte[]            buffer,
-                                                         int               offset,
-                                                         int               length,
-                                                         CancellationToken cancellationToken)
-        {
-            ValidateBufferArgs(buffer,
-                               offset,
-                               length);
-
-            if(cancellationToken.IsCancellationRequested)
-            {
-                return await Task.FromCanceled<int>(cancellationToken);
-            }
-
-            if(length <= 0)
-            {
+            ValidateBufferArgs(buffer, offset, length);
+            if (length <= 0)
                 return 0;
-            }
 
             // If we previously peeked a byte, we need to use that first.
-            int totalBytes = 0;
-
-            if(_hasPeekByte)
+            var totalBytes = 0;
+            if (_hasPeekByte)
             {
                 buffer[offset++] = _peekBuffer[0];
-                _hasPeekByte     = false;
-
-                if(1 == length)
+                _hasPeekByte = false;
+                if (1 == length)
                 {
                     return 1; // we're done
                 }
-
                 ++totalBytes;
             }
 
-            int remaining = length - totalBytes;
-            Debug.Assert(remaining > 0); // any other possible cases should have been handled already 
-
-            while(true)
+            var remaining = length - totalBytes;
+            Debug.Assert(remaining > 0);  // any other possible cases should have been handled already 
+            while (true)
             {
-                int numBytes = await ReadAsync(buffer,
-                                               offset,
-                                               remaining,
-                                               cancellationToken);
-
+                var numBytes = await ReadAsync(buffer, offset, remaining, cancellationToken);
                 totalBytes += numBytes;
-
-                if(totalBytes >= length)
+                if (totalBytes >= length)
                 {
                     return totalBytes; // we're done
                 }
 
-                if(numBytes <= 0)
+                if (numBytes <= 0)
                 {
                     throw new TTransportException(TTransportException.ExceptionType.EndOfFile,
-                                                  "Cannot read, Remote side has closed");
+                        "Cannot read, Remote side has closed");
                 }
 
                 remaining -= numBytes;
-                offset    += numBytes;
+                offset += numBytes;
             }
         }
 
-        public virtual async Task WriteAsync(byte[] buffer)
+        public virtual async Task WriteAsync(byte[] buffer, CancellationToken cancellationToken)
         {
-            await WriteAsync(buffer,
-                             CancellationToken.None);
+            await WriteAsync(buffer, 0, buffer.Length, CancellationToken.None);
         }
 
-        public virtual async Task WriteAsync(byte[]            buffer,
-                                             CancellationToken cancellationToken)
+        public virtual async Task WriteAsync(byte[] buffer, int offset, int length)
         {
-            await WriteAsync(buffer,
-                             0,
-                             buffer.Length,
-                             CancellationToken.None);
+            await WriteAsync(buffer, offset, length, CancellationToken.None);
         }
 
-        public virtual async Task WriteAsync(byte[] buffer,
-                                             int    offset,
-                                             int    length)
-        {
-            await WriteAsync(buffer,
-                             offset,
-                             length,
-                             CancellationToken.None);
-        }
+        public abstract Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken);
 
-        public abstract Task WriteAsync(byte[]            buffer,
-                                        int               offset,
-                                        int               length,
-                                        CancellationToken cancellationToken);
-
-        public virtual async Task FlushAsync()
-        {
-            await FlushAsync(CancellationToken.None);
-        }
 
         public abstract Task FlushAsync(CancellationToken cancellationToken);
 

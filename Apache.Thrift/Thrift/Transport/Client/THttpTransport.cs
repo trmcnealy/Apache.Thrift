@@ -31,40 +31,28 @@ namespace Apache.Thrift.Transport.Client
     public class THttpTransport : TEndpointTransport
     {
         private readonly X509Certificate[] _certificates;
-        private readonly Uri               _uri;
+        private readonly Uri _uri;
 
-        private int          _connectTimeout = 30000; // Timeouts in milliseconds
-        private HttpClient   _httpClient;
-        private Stream       _inputStream;
+        private int _connectTimeout = 30000; // Timeouts in milliseconds
+        private HttpClient _httpClient;
+        private Stream _inputStream;
         private MemoryStream _outputStream = new MemoryStream();
-        private bool         _isDisposed;
+        private bool _isDisposed;
 
-        public THttpTransport(Uri                         uri,
-                              TConfiguration              config,
-                              IDictionary<string, string> customRequestHeaders = null,
-                              string                      userAgent            = null)
-            : this(uri,
-                   config,
-                   Enumerable.Empty<X509Certificate>(),
-                   customRequestHeaders,
-                   userAgent)
+        public THttpTransport(Uri uri, TConfiguration config, IDictionary<string, string> customRequestHeaders = null, string userAgent = null)
+            : this(uri, config, Enumerable.Empty<X509Certificate>(), customRequestHeaders, userAgent)
         {
         }
 
-        public THttpTransport(Uri                          uri,
-                              TConfiguration               config,
-                              IEnumerable<X509Certificate> certificates,
-                              IDictionary<string, string>  customRequestHeaders,
-                              string                       userAgent = null)
+        public THttpTransport(Uri uri, TConfiguration config, IEnumerable<X509Certificate> certificates,
+            IDictionary<string, string> customRequestHeaders, string userAgent = null)
             : base(config)
         {
-            _uri          = uri;
+            _uri = uri;
             _certificates = (certificates ?? Enumerable.Empty<X509Certificate>()).ToArray();
 
-            if(!string.IsNullOrEmpty(userAgent))
-            {
+            if (!string.IsNullOrEmpty(userAgent))
                 UserAgent = userAgent;
-            }
 
             // due to current bug with performance of Dispose in netcore https://github.com/dotnet/corefx/issues/8809
             // this can be switched to default way (create client->use->dispose per flush) later
@@ -74,56 +62,45 @@ namespace Apache.Thrift.Transport.Client
         // According to RFC 2616 section 3.8, the "User-Agent" header may not carry a version number
         public readonly string UserAgent = "Thrift netstd THttpClient";
 
-        public override bool IsOpen { get { return true; } }
+        public override bool IsOpen => true;
 
-        public HttpRequestHeaders RequestHeaders { get { return _httpClient.DefaultRequestHeaders; } }
+        public HttpRequestHeaders RequestHeaders => _httpClient.DefaultRequestHeaders;
 
         public MediaTypeHeaderValue ContentType { get; set; }
 
-        public override async Task OpenAsync(CancellationToken cancellationToken)
+        public override Task OpenAsync(CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
         }
 
         public override void Close()
         {
-            if(_inputStream != null)
+            if (_inputStream != null)
             {
                 _inputStream.Dispose();
                 _inputStream = null;
             }
 
-            if(_outputStream != null)
+            if (_outputStream != null)
             {
                 _outputStream.Dispose();
                 _outputStream = null;
             }
 
-            if(_httpClient != null)
+            if (_httpClient != null)
             {
                 _httpClient.Dispose();
                 _httpClient = null;
             }
         }
 
-        public override async ValueTask<int> ReadAsync(byte[]            buffer,
-                                                       int               offset,
-                                                       int               length,
-                                                       CancellationToken cancellationToken)
+        public override async ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                return await Task.FromCanceled<int>(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
-            if(_inputStream == null)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                                              "No request has been sent");
-            }
+            if (_inputStream == null)
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "No request has been sent");
 
             CheckReadBytesAvailable(length);
 
@@ -132,53 +109,38 @@ namespace Apache.Thrift.Transport.Client
 #if NETSTANDARD2_1
                 var ret = await _inputStream.ReadAsync(new Memory<byte>(buffer, offset, length), cancellationToken);
 #else
-                int ret = await _inputStream.ReadAsync(buffer,
-                                                       offset,
-                                                       length,
-                                                       cancellationToken);
+                var ret = await _inputStream.ReadAsync(buffer, offset, length, cancellationToken);
 #endif
-                if(ret == -1)
+                if (ret == -1)
                 {
-                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile,
-                                                  "No more data available");
+                    throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "No more data available");
                 }
 
                 CountConsumedMessageBytes(ret);
-
                 return ret;
             }
-            catch(IOException iox)
+            catch (IOException iox)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                              iox.ToString());
+                throw new TTransportException(TTransportException.ExceptionType.Unknown, iox.ToString());
             }
         }
 
-        public override async Task WriteAsync(byte[]            buffer,
-                                              int               offset,
-                                              int               length,
-                                              CancellationToken cancellationToken)
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
-            await _outputStream.WriteAsync(buffer,
-                                           offset,
-                                           length,
-                                           cancellationToken);
+            await _outputStream.WriteAsync(buffer, offset, length, cancellationToken);
         }
 
         private HttpClient CreateClient(IDictionary<string, string> customRequestHeaders)
         {
-            HttpClientHandler handler = new HttpClientHandler();
+            var handler = new HttpClientHandler();
             handler.ClientCertificates.AddRange(_certificates);
-            handler.AutomaticDecompression = System.Net.DecompressionMethods.Deflate | System.Net.DecompressionMethods.GZip;
+            handler.AutomaticDecompression = System.Net.DecompressionMethods.None |System.Net.DecompressionMethods.Deflate | System.Net.DecompressionMethods.GZip;
 
-            HttpClient httpClient = new HttpClient(handler);
+            var httpClient = new HttpClient(handler);
 
-            if(_connectTimeout > 0)
+            if (_connectTimeout > 0)
             {
                 httpClient.Timeout = TimeSpan.FromMilliseconds(_connectTimeout);
             }
@@ -189,12 +151,11 @@ namespace Apache.Thrift.Transport.Client
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("deflate"));
             httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
-            if(customRequestHeaders != null)
+            if (customRequestHeaders != null)
             {
-                foreach(KeyValuePair<string, string> item in customRequestHeaders)
+                foreach (var item in customRequestHeaders)
                 {
-                    httpClient.DefaultRequestHeaders.Add(item.Key,
-                                                         item.Value);
+                    httpClient.DefaultRequestHeaders.Add(item.Key, item.Value);
                 }
             }
 
@@ -205,41 +166,34 @@ namespace Apache.Thrift.Transport.Client
         {
             try
             {
-                _outputStream.Seek(0,
-                                   SeekOrigin.Begin);
+                _outputStream.Seek(0, SeekOrigin.Begin);
 
-                using(StreamContent contentStream = new StreamContent(_outputStream))
+                using (var contentStream = new StreamContent(_outputStream))
                 {
                     contentStream.Headers.ContentType = ContentType ?? new MediaTypeHeaderValue(@"application/x-thrift");
 
-                    HttpResponseMessage response = (await _httpClient.PostAsync(_uri,
-                                                                                contentStream,
-                                                                                cancellationToken)).EnsureSuccessStatusCode();
+                    var response = (await _httpClient.PostAsync(_uri, contentStream, cancellationToken)).EnsureSuccessStatusCode();
 
                     _inputStream?.Dispose();
                     _inputStream = await response.Content.ReadAsStreamAsync();
-
-                    if(_inputStream.CanSeek)
+                    if (_inputStream.CanSeek)
                     {
-                        _inputStream.Seek(0,
-                                          SeekOrigin.Begin);
+                        _inputStream.Seek(0, SeekOrigin.Begin);
                     }
                 }
             }
-            catch(IOException iox)
+            catch (IOException iox)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                              iox.ToString());
+                throw new TTransportException(TTransportException.ExceptionType.Unknown, iox.ToString());
             }
-            catch(HttpRequestException wx)
+            catch (HttpRequestException wx)
             {
                 throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                              "Couldn't connect to server: " + wx);
+                    "Couldn't connect to server: " + wx);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                              ex.Message);
+                throw new TTransportException(TTransportException.ExceptionType.Unknown, ex.Message);
             }
             finally
             {
@@ -248,19 +202,19 @@ namespace Apache.Thrift.Transport.Client
             }
         }
 
+
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if(!_isDisposed)
+            if (!_isDisposed)
             {
-                if(disposing)
+                if (disposing)
                 {
                     _inputStream?.Dispose();
                     _outputStream?.Dispose();
                     _httpClient?.Dispose();
                 }
             }
-
             _isDisposed = true;
         }
     }

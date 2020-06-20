@@ -17,7 +17,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol.Entities;
 
 namespace Apache.Thrift.Protocol
@@ -68,30 +67,23 @@ namespace Apache.Thrift.Protocol
          *  protocol        Your communication protocol of choice, e.g. TBinaryProtocol
          *  serviceName     The service name of the service communicating via this protocol.
          */
-        public TMultiplexedProtocol(TProtocol protocol,
-                                    string    serviceName)
+
+        public TMultiplexedProtocol(TProtocol protocol, string serviceName)
             : base(protocol)
         {
             _serviceName = serviceName;
         }
 
-        public override async Task WriteMessageBeginAsync(TMessage          message,
-                                                          CancellationToken cancellationToken)
+        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
         {
-            switch(message.Type)
+            switch (message.Type)
             {
                 case TMessageType.Call:
                 case TMessageType.Oneway:
-                    await base.WriteMessageBeginAsync(new TMessage($"{_serviceName}{Separator}{message.Name}",
-                                                                   message.Type,
-                                                                   message.SeqID),
-                                                      cancellationToken);
-
+                    await base.WriteMessageBeginAsync(new TMessage($"{_serviceName}{Separator}{message.Name}", message.Type, message.SeqID), cancellationToken);
                     break;
                 default:
-                    await base.WriteMessageBeginAsync(message,
-                                                      cancellationToken);
-
+                    await base.WriteMessageBeginAsync(message, cancellationToken);
                     break;
             }
         }

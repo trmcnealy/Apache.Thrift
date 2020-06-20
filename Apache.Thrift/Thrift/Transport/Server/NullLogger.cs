@@ -16,8 +16,8 @@
 // under the License.
 
 using Microsoft.Extensions.Logging;
-
 using System;
+
 
 namespace Apache.Thrift.Transport.Server
 {
@@ -44,16 +44,13 @@ namespace Apache.Thrift.Transport.Server
 
         public bool IsEnabled(LogLevel logLevel)
         {
-            return false; // no
+            return false;  // no
         }
 
-        public void Log<TState>(LogLevel                        logLevel,
-                                EventId                         eventId,
-                                TState                          state,
-                                Exception                       exception,
-                                Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
             // do nothing
         }
     }
 }
+

@@ -20,13 +20,11 @@ namespace Apache.Thrift.Protocol.Entities
     // ReSharper disable once InconsistentNaming
     public struct TMap
     {
-        public TMap(TType keyType,
-                    TType valueType,
-                    int   count)
+        public TMap(TType keyType, TType valueType, int count)
         {
-            KeyType   = keyType;
+            KeyType = keyType;
             ValueType = valueType;
-            Count     = count;
+            Count = count;
         }
 
         public TType KeyType { get; set; }

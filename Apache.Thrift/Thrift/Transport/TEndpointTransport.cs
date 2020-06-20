@@ -5,19 +5,17 @@ using System.Text;
 
 namespace Apache.Thrift.Transport
 {
-    public abstract class TEndpointTransport : TTransport
+
+    abstract public class TEndpointTransport : TTransport
     {
-        protected long MaxMessageSize { get { return Configuration.MaxMessageSize; } }
-
+        protected long MaxMessageSize { get => Configuration.MaxMessageSize; }
         protected long KnownMessageSize { get; private set; }
-
         protected long RemainingMessageSize { get; private set; }
 
         private readonly TConfiguration _configuration;
+        public override TConfiguration Configuration { get => _configuration; }
 
-        public override TConfiguration Configuration { get { return _configuration; } }
-
-        public TEndpointTransport(TConfiguration config)
+        public TEndpointTransport( TConfiguration config)
         {
             _configuration = config ?? new TConfiguration();
             Debug.Assert(Configuration != null);
@@ -31,24 +29,19 @@ namespace Apache.Thrift.Transport
         protected void ResetConsumedMessageSize(long newSize = -1)
         {
             // full reset 
-            if(newSize < 0)
+            if (newSize < 0)
             {
-                KnownMessageSize     = MaxMessageSize;
+                KnownMessageSize = MaxMessageSize;
                 RemainingMessageSize = MaxMessageSize;
-
                 return;
             }
 
             // update only: message size can shrink, but not grow
             Debug.Assert(KnownMessageSize <= MaxMessageSize);
+            if (newSize > KnownMessageSize)
+                throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "MaxMessageSize reached");
 
-            if(newSize > KnownMessageSize)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.EndOfFile,
-                                              "MaxMessageSize reached");
-            }
-
-            KnownMessageSize     = newSize;
+            KnownMessageSize = newSize;
             RemainingMessageSize = newSize;
         }
 
@@ -59,7 +52,7 @@ namespace Apache.Thrift.Transport
         /// <param name="size"></param>
         public override void UpdateKnownMessageSize(long size)
         {
-            long consumed = KnownMessageSize - RemainingMessageSize;
+            var consumed = KnownMessageSize - RemainingMessageSize;
             ResetConsumedMessageSize(size);
             CountConsumedMessageBytes(consumed);
         }
@@ -70,11 +63,8 @@ namespace Apache.Thrift.Transport
         /// <param name="numBytes"></param>
         public override void CheckReadBytesAvailable(long numBytes)
         {
-            if(RemainingMessageSize < numBytes)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.EndOfFile,
-                                              "MaxMessageSize reached");
-            }
+            if (RemainingMessageSize < numBytes)
+                throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "MaxMessageSize reached");
         }
 
         /// <summary>
@@ -83,16 +73,14 @@ namespace Apache.Thrift.Transport
         /// <param name="numBytes"></param>
         protected void CountConsumedMessageBytes(long numBytes)
         {
-            if(RemainingMessageSize >= numBytes)
+            if (RemainingMessageSize >= numBytes)
             {
                 RemainingMessageSize -= numBytes;
             }
             else
             {
                 RemainingMessageSize = 0;
-
-                throw new TTransportException(TTransportException.ExceptionType.EndOfFile,
-                                              "MaxMessageSize reached");
+                throw new TTransportException(TTransportException.ExceptionType.EndOfFile, "MaxMessageSize reached");
             }
         }
     }

@@ -17,7 +17,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol.Entities;
 
 namespace Apache.Thrift.Protocol.Utilities
@@ -25,118 +24,78 @@ namespace Apache.Thrift.Protocol.Utilities
     // ReSharper disable once InconsistentNaming
     public static class TProtocolUtil
     {
-        public static async Task SkipAsync(TProtocol         protocol,
-                                           TType             type,
-                                           CancellationToken cancellationToken)
+        public static async Task SkipAsync(TProtocol protocol, TType type, CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             protocol.IncrementRecursionDepth();
-
             try
             {
-                switch(type)
+                switch (type)
                 {
                     case TType.Bool:
                         await protocol.ReadBoolAsync(cancellationToken);
-
                         break;
                     case TType.Byte:
                         await protocol.ReadByteAsync(cancellationToken);
-
                         break;
                     case TType.I16:
                         await protocol.ReadI16Async(cancellationToken);
-
                         break;
                     case TType.I32:
                         await protocol.ReadI32Async(cancellationToken);
-
                         break;
                     case TType.I64:
                         await protocol.ReadI64Async(cancellationToken);
-
                         break;
                     case TType.Double:
                         await protocol.ReadDoubleAsync(cancellationToken);
-
                         break;
                     case TType.String:
                         // Don't try to decode the string, just skip it.
                         await protocol.ReadBinaryAsync(cancellationToken);
-
                         break;
                     case TType.Struct:
                         await protocol.ReadStructBeginAsync(cancellationToken);
-
-                        while(true)
+                        while (true)
                         {
-                            TField field = await protocol.ReadFieldBeginAsync(cancellationToken);
-
-                            if(field.Type == TType.Stop)
+                            var field = await protocol.ReadFieldBeginAsync(cancellationToken);
+                            if (field.Type == TType.Stop)
                             {
                                 break;
                             }
-
-                            await SkipAsync(protocol,
-                                            field.Type,
-                                            cancellationToken);
-
+                            await SkipAsync(protocol, field.Type, cancellationToken);
                             await protocol.ReadFieldEndAsync(cancellationToken);
                         }
-
                         await protocol.ReadStructEndAsync(cancellationToken);
-
                         break;
                     case TType.Map:
-                        TMap map = await protocol.ReadMapBeginAsync(cancellationToken);
-
-                        for(int i = 0; i < map.Count; i++)
+                        var map = await protocol.ReadMapBeginAsync(cancellationToken);
+                        for (var i = 0; i < map.Count; i++)
                         {
-                            await SkipAsync(protocol,
-                                            map.KeyType,
-                                            cancellationToken);
-
-                            await SkipAsync(protocol,
-                                            map.ValueType,
-                                            cancellationToken);
+                            await SkipAsync(protocol, map.KeyType, cancellationToken);
+                            await SkipAsync(protocol, map.ValueType, cancellationToken);
                         }
-
                         await protocol.ReadMapEndAsync(cancellationToken);
-
                         break;
                     case TType.Set:
-                        TSet set = await protocol.ReadSetBeginAsync(cancellationToken);
-
-                        for(int i = 0; i < set.Count; i++)
+                        var set = await protocol.ReadSetBeginAsync(cancellationToken);
+                        for (var i = 0; i < set.Count; i++)
                         {
-                            await SkipAsync(protocol,
-                                            set.ElementType,
-                                            cancellationToken);
+                            await SkipAsync(protocol, set.ElementType, cancellationToken);
                         }
-
                         await protocol.ReadSetEndAsync(cancellationToken);
-
                         break;
                     case TType.List:
-                        TList list = await protocol.ReadListBeginAsync(cancellationToken);
-
-                        for(int i = 0; i < list.Count; i++)
+                        var list = await protocol.ReadListBeginAsync(cancellationToken);
+                        for (var i = 0; i < list.Count; i++)
                         {
-                            await SkipAsync(protocol,
-                                            list.ElementType,
-                                            cancellationToken);
+                            await SkipAsync(protocol, list.ElementType, cancellationToken);
                         }
-
                         await protocol.ReadListEndAsync(cancellationToken);
-
                         break;
                     default:
-                        throw new TProtocolException(TProtocolException.INVALID_DATA,
-                                                     "Unknown data type " + type.ToString("d"));
+                        throw new TProtocolException(TProtocolException.INVALID_DATA, "Unknown data type " + type.ToString("d"));
                 }
             }
             finally

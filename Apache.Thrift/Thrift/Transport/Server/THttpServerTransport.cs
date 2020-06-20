@@ -19,10 +19,8 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-
 using Apache.Thrift.Processor;
 using Apache.Thrift.Protocol;
 using Apache.Thrift.Transport.Client;
@@ -32,10 +30,10 @@ namespace Apache.Thrift.Transport.Server
     // ReSharper disable once InconsistentNaming
     public class THttpServerTransport
     {
-        protected const  string          ContentType = "application/x-thrift";
-        private readonly ILogger         _logger;
+        protected const string ContentType = "application/x-thrift";
+        private readonly ILogger _logger;
         private readonly RequestDelegate _next;
-        protected        Encoding        Encoding = Encoding.UTF8;
+        protected Encoding Encoding = Encoding.UTF8;
 
         protected TProtocolFactory InputProtocolFactory;
         protected TProtocolFactory OutputProtocolFactory;
@@ -44,101 +42,81 @@ namespace Apache.Thrift.Transport.Server
         protected TTransportFactory OutputTransportFactory;
 
         protected ITAsyncProcessor Processor;
-        protected TConfiguration   Configuration;
+        protected TConfiguration Configuration;
 
-        public THttpServerTransport(ITAsyncProcessor processor,
-                                    TConfiguration   config,
-                                    RequestDelegate  next          = null,
-                                    ILoggerFactory   loggerFactory = null)
-            : this(processor,
-                   config,
-                   new TBinaryProtocol.Factory(),
-                   null,
-                   next,
-                   loggerFactory)
+        public THttpServerTransport(
+            ITAsyncProcessor processor,
+            TConfiguration config,
+            RequestDelegate next = null,
+            ILoggerFactory loggerFactory = null)
+            : this(processor, config, new TBinaryProtocol.Factory(), null, next, loggerFactory)
         {
         }
 
-        public THttpServerTransport(ITAsyncProcessor  processor,
-                                    TConfiguration    config,
-                                    TProtocolFactory  protocolFactory,
-                                    TTransportFactory transFactory  = null,
-                                    RequestDelegate   next          = null,
-                                    ILoggerFactory    loggerFactory = null)
-            : this(processor,
-                   config,
-                   protocolFactory,
-                   protocolFactory,
-                   transFactory,
-                   transFactory,
-                   next,
-                   loggerFactory)
+        public THttpServerTransport(
+            ITAsyncProcessor processor,
+            TConfiguration config,
+            TProtocolFactory protocolFactory, 
+            TTransportFactory transFactory = null, 
+            RequestDelegate next = null,
+            ILoggerFactory loggerFactory = null)
+            : this(processor, config, protocolFactory, protocolFactory, transFactory, transFactory, next, loggerFactory)
         {
         }
 
-        public THttpServerTransport(ITAsyncProcessor  processor,
-                                    TConfiguration    config,
-                                    TProtocolFactory  inputProtocolFactory,
-                                    TProtocolFactory  outputProtocolFactory,
-                                    TTransportFactory inputTransFactory  = null,
-                                    TTransportFactory outputTransFactory = null,
-                                    RequestDelegate   next               = null,
-                                    ILoggerFactory    loggerFactory      = null)
+        public THttpServerTransport(
+            ITAsyncProcessor processor,
+            TConfiguration config,
+            TProtocolFactory inputProtocolFactory,
+            TProtocolFactory outputProtocolFactory,
+            TTransportFactory inputTransFactory = null,
+            TTransportFactory outputTransFactory = null,
+            RequestDelegate next = null, 
+            ILoggerFactory loggerFactory = null)
         {
             // loggerFactory == null is not illegal anymore
 
-            Processor     = processor ?? throw new ArgumentNullException(nameof(processor));
-            Configuration = config; // may be null
+            Processor = processor ?? throw new ArgumentNullException(nameof(processor));
+            Configuration = config;  // may be null
 
-            InputProtocolFactory  = inputProtocolFactory  ?? throw new ArgumentNullException(nameof(inputProtocolFactory));
+            InputProtocolFactory = inputProtocolFactory ?? throw new ArgumentNullException(nameof(inputProtocolFactory));
             OutputProtocolFactory = outputProtocolFactory ?? throw new ArgumentNullException(nameof(outputProtocolFactory));
 
-            InputTransportFactory  = inputTransFactory;
+            InputTransportFactory = inputTransFactory;
             OutputTransportFactory = outputTransFactory;
 
-            _next   = next;
-            _logger = loggerFactory != null ? loggerFactory.CreateLogger<THttpServerTransport>() : new NullLogger<THttpServerTransport>();
+            _next = next;
+            _logger = (loggerFactory != null) ? loggerFactory.CreateLogger<THttpServerTransport>() : new NullLogger<THttpServerTransport>();
         }
 
         public async Task Invoke(HttpContext context)
         {
             context.Response.ContentType = ContentType;
-
-            await ProcessRequestAsync(context,
-                                      context.RequestAborted); //TODO: check for correct logic
+            await ProcessRequestAsync(context, context.RequestAborted); //TODO: check for correct logic
         }
 
-        public async Task ProcessRequestAsync(HttpContext       context,
-                                              CancellationToken cancellationToken)
+        public async Task ProcessRequestAsync(HttpContext context, CancellationToken cancellationToken)
         {
-            TStreamTransport transport = new TStreamTransport(context.Request.Body,
-                                                              context.Response.Body,
-                                                              Configuration);
+            var transport = new TStreamTransport(context.Request.Body, context.Response.Body, Configuration);
 
             try
             {
-                TTransport intrans  = InputTransportFactory  != null ? InputTransportFactory.GetTransport(transport) : transport;
-                TTransport outtrans = OutputTransportFactory != null ? OutputTransportFactory.GetTransport(transport) : transport;
+                var intrans = (InputTransportFactory != null) ? InputTransportFactory.GetTransport(transport) : transport;
+                var outtrans = (OutputTransportFactory != null) ? OutputTransportFactory.GetTransport(transport) : transport;
 
-                TProtocol input  = InputProtocolFactory.GetProtocol(intrans);
-                TProtocol output = OutputProtocolFactory.GetProtocol(outtrans);
+                var input = InputProtocolFactory.GetProtocol(intrans);
+                var output = OutputProtocolFactory.GetProtocol(outtrans);
 
-                while(await Processor.ProcessAsync(input,
-                                                   output,
-                                                   cancellationToken))
+                while (await Processor.ProcessAsync(input, output, cancellationToken))
                 {
-                    if(!context.Response.HasStarted) // oneway method called
-                    {
+                    if (!context.Response.HasStarted)  // oneway method called
                         await context.Response.Body.FlushAsync(cancellationToken);
-                    }
                 }
             }
-            catch(TTransportException)
+            catch (TTransportException)
             {
-                if(!context.Response.HasStarted) // if something goes bust, let the client know
-                {
+                if (!context.Response.HasStarted)  // if something goes bust, let the client know
                     context.Response.StatusCode = 500;
-                }
             }
             finally
             {

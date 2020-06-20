@@ -16,54 +16,64 @@
 // under the License.
 
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Apache.Thrift.Collections
 {
     // ReSharper disable once InconsistentNaming
-    public class TCollections
+    public static class TCollections
     {
         /// <summary>
         ///     This will return true if the two collections are value-wise the same.
         ///     If the collection contains a collection, the collections will be compared using this method.
         /// </summary>
-        public static bool Equals(IEnumerable first,
-                                  IEnumerable second)
+        public static bool Equals(IEnumerable first, IEnumerable second)
         {
-            if(first == null && second == null)
+            if (first == null && second == null)
             {
                 return true;
             }
 
-            if(first == null || second == null)
+            if (first == null || second == null)
             {
                 return false;
             }
 
-            IEnumerator fiter = first.GetEnumerator();
-            IEnumerator siter = second.GetEnumerator();
-
-            bool fnext = fiter.MoveNext();
-            bool snext = siter.MoveNext();
-
-            while(fnext && snext)
+            // for dictionaries, we need to compare keys and values separately
+            // because KeyValuePair<K,V>.Equals() will not do what we want
+            var fdict = first as IDictionary;
+            var sdict = second as IDictionary;
+            if ((fdict != null) || (sdict != null))
             {
-                IEnumerable fenum = fiter.Current as IEnumerable;
-                IEnumerable senum = siter.Current as IEnumerable;
+                if ((fdict == null) || (sdict == null))
+                    return false;
+                return TCollections.Equals(fdict.Keys, sdict.Keys)
+                    && TCollections.Equals(fdict.Values, sdict.Values);
+            }
 
-                if(fenum != null && senum != null)
+            var fiter = first.GetEnumerator();
+            var siter = second.GetEnumerator();
+
+            var fnext = fiter.MoveNext();
+            var snext = siter.MoveNext();
+
+            while (fnext && snext)
+            {
+                var fenum = fiter.Current as IEnumerable;
+                var senum = siter.Current as IEnumerable;
+
+                if (fenum != null && senum != null)
                 {
-                    if(!Equals(fenum,
-                               senum))
+                    if (!Equals(fenum, senum))
                     {
                         return false;
                     }
                 }
-                else if((fenum == null) ^ (senum == null))
+                else if (fenum == null ^ senum == null)
                 {
                     return false;
                 }
-                else if(!Equals(fiter.Current,
-                                siter.Current))
+                else if (!Equals(fiter.Current, siter.Current))
                 {
                     return false;
                 }
@@ -80,25 +90,27 @@ namespace Apache.Thrift.Collections
         /// </summary>
         public static int GetHashCode(IEnumerable enumerable)
         {
-            if(enumerable == null)
+            if (enumerable == null)
             {
                 return 0;
             }
 
-            int hashcode = 0;
+            var hashcode = 0;
 
-            foreach(object obj in enumerable)
+            foreach (var obj in enumerable)
             {
-                IEnumerable enum2   = obj as IEnumerable;
-                int         objHash = enum2 == null ? obj.GetHashCode() : GetHashCode(enum2);
+                var enum2 = obj as IEnumerable;
+                var objHash = enum2 == null ? obj.GetHashCode() : GetHashCode(enum2);
 
                 unchecked
                 {
-                    hashcode = (hashcode * 397) ^ objHash;
+                    hashcode = (hashcode * 397) ^ (objHash);
                 }
             }
 
             return hashcode;
         }
+
+
     }
 }

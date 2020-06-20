@@ -18,9 +18,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.Extensions.Logging;
-
 using Apache.Thrift.Protocol;
 using Apache.Thrift.Processor;
 using Apache.Thrift.Transport;
@@ -32,61 +30,61 @@ namespace Apache.Thrift.Server
     // ReSharper disable once InconsistentNaming
     public class TSimpleAsyncServer : TServer
     {
-        private readonly int  _clientWaitingDelay;
+        private readonly int _clientWaitingDelay;
         private volatile Task _serverTask;
 
         public TSimpleAsyncServer(ITProcessorFactory itProcessorFactory,
-                                  TServerTransport   serverTransport,
-                                  TTransportFactory  inputTransportFactory,
-                                  TTransportFactory  outputTransportFactory,
-                                  TProtocolFactory   inputProtocolFactory,
-                                  TProtocolFactory   outputProtocolFactory,
-                                  ILogger            logger,
-                                  int                clientWaitingDelay = 10)
+            TServerTransport serverTransport,
+            TTransportFactory inputTransportFactory,
+            TTransportFactory outputTransportFactory,
+            TProtocolFactory inputProtocolFactory,
+            TProtocolFactory outputProtocolFactory,
+            ILogger logger,
+            int clientWaitingDelay = 10)
             : base(itProcessorFactory,
-                   serverTransport,
-                   inputTransportFactory,
-                   outputTransportFactory,
-                   inputProtocolFactory,
-                   outputProtocolFactory,
-                   logger)
+                  serverTransport,
+                  inputTransportFactory,
+                  outputTransportFactory,
+                  inputProtocolFactory,
+                  outputProtocolFactory,
+                  logger)
         {
             _clientWaitingDelay = clientWaitingDelay;
         }
 
         public TSimpleAsyncServer(ITProcessorFactory itProcessorFactory,
-                                  TServerTransport   serverTransport,
-                                  TTransportFactory  inputTransportFactory,
-                                  TTransportFactory  outputTransportFactory,
-                                  TProtocolFactory   inputProtocolFactory,
-                                  TProtocolFactory   outputProtocolFactory,
-                                  ILoggerFactory     loggerFactory,
-                                  int                clientWaitingDelay = 10)
+            TServerTransport serverTransport,
+            TTransportFactory inputTransportFactory,
+            TTransportFactory outputTransportFactory,
+            TProtocolFactory inputProtocolFactory,
+            TProtocolFactory outputProtocolFactory,
+            ILoggerFactory loggerFactory,
+            int clientWaitingDelay = 10)
             : this(itProcessorFactory,
-                   serverTransport,
-                   inputTransportFactory,
-                   outputTransportFactory,
-                   inputProtocolFactory,
-                   outputProtocolFactory,
-                   loggerFactory.CreateLogger<TSimpleAsyncServer>(),
-                   clientWaitingDelay)
+                  serverTransport,
+                  inputTransportFactory,
+                  outputTransportFactory,
+                  inputProtocolFactory,
+                  outputProtocolFactory,
+                  loggerFactory.CreateLogger<TSimpleAsyncServer>(),
+                  clientWaitingDelay)
         {
         }
 
         public TSimpleAsyncServer(ITAsyncProcessor processor,
-                                  TServerTransport serverTransport,
-                                  TProtocolFactory inputProtocolFactory,
-                                  TProtocolFactory outputProtocolFactory,
-                                  ILoggerFactory   loggerFactory,
-                                  int              clientWaitingDelay = 10)
+            TServerTransport serverTransport,
+            TProtocolFactory inputProtocolFactory,
+            TProtocolFactory outputProtocolFactory,
+            ILoggerFactory loggerFactory,
+            int clientWaitingDelay = 10)
             : this(new TSingletonProcessorFactory(processor),
-                   serverTransport,
-                   null, // defaults to TTransportFactory()
-                   null, // defaults to TTransportFactory()
-                   inputProtocolFactory,
-                   outputProtocolFactory,
-                   loggerFactory.CreateLogger(nameof(TSimpleAsyncServer)),
-                   clientWaitingDelay)
+                  serverTransport,
+                  null, // defaults to TTransportFactory()
+                  null, // defaults to TTransportFactory()
+                  inputProtocolFactory,
+                  outputProtocolFactory,
+                  loggerFactory.CreateLogger(nameof(TSimpleAsyncServer)),
+                  clientWaitingDelay)
         {
         }
 
@@ -95,12 +93,10 @@ namespace Apache.Thrift.Server
             try
             {
                 // cancelation token
-                _serverTask = Task.Factory.StartNew(() => StartListening(cancellationToken),
-                                                    TaskCreationOptions.LongRunning);
-
+                _serverTask = Task.Factory.StartNew(() => StartListening(cancellationToken), TaskCreationOptions.LongRunning);
                 await _serverTask;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError(ex.ToString());
             }
@@ -112,30 +108,27 @@ namespace Apache.Thrift.Server
 
             Logger.LogTrace("Started listening at server");
 
-            if(ServerEventHandler != null)
+            if (ServerEventHandler != null)
             {
                 await ServerEventHandler.PreServeAsync(cancellationToken);
             }
 
-            while(!cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                if(ServerTransport.IsClientPending())
+                if (ServerTransport.IsClientPending())
                 {
                     Logger.LogTrace("Waiting for client connection");
 
                     try
                     {
-                        TTransport client = await ServerTransport.AcceptAsync(cancellationToken);
-
-                        await Task.Factory.StartNew(() => Execute(client,
-                                                                  cancellationToken),
-                                                    cancellationToken);
+                        var client = await ServerTransport.AcceptAsync(cancellationToken);
+                        await Task.Factory.StartNew(() => Execute(client, cancellationToken), cancellationToken);
                     }
-                    catch(TTransportException ttx)
+                    catch (TTransportException ttx)
                     {
                         Logger.LogTrace($"Transport exception: {ttx}");
 
-                        if(ttx.Type != TTransportException.ExceptionType.Interrupted)
+                        if (ttx.Type != TTransportException.ExceptionType.Interrupted)
                         {
                             Logger.LogError(ttx.ToString());
                         }
@@ -145,12 +138,9 @@ namespace Apache.Thrift.Server
                 {
                     try
                     {
-                        await Task.Delay(TimeSpan.FromMilliseconds(_clientWaitingDelay),
-                                         cancellationToken);
+                        await Task.Delay(TimeSpan.FromMilliseconds(_clientWaitingDelay), cancellationToken);
                     }
-                    catch(TaskCanceledException)
-                    {
-                    }
+                    catch (TaskCanceledException) { }
                 }
             }
 
@@ -163,74 +153,64 @@ namespace Apache.Thrift.Server
         {
         }
 
-        private async Task Execute(TTransport        client,
-                                   CancellationToken cancellationToken)
+        private async Task Execute(TTransport client, CancellationToken cancellationToken)
         {
             Logger.LogTrace("Started client request processing");
 
-            ITAsyncProcessor processor = ProcessorFactory.GetAsyncProcessor(client,
-                                                                            this);
+            var processor = ProcessorFactory.GetAsyncProcessor(client, this);
 
-            TTransport inputTransport    = null;
-            TTransport outputTransport   = null;
-            TProtocol  inputProtocol     = null;
-            TProtocol  outputProtocol    = null;
-            object     connectionContext = null;
+            TTransport inputTransport = null;
+            TTransport outputTransport = null;
+            TProtocol inputProtocol = null;
+            TProtocol outputProtocol = null;
+            object connectionContext = null;
 
             try
             {
                 try
                 {
-                    inputTransport  = InputTransportFactory.GetTransport(client);
+                    inputTransport = InputTransportFactory.GetTransport(client);
                     outputTransport = OutputTransportFactory.GetTransport(client);
-                    inputProtocol   = InputProtocolFactory.GetProtocol(inputTransport);
-                    outputProtocol  = OutputProtocolFactory.GetProtocol(outputTransport);
+                    inputProtocol = InputProtocolFactory.GetProtocol(inputTransport);
+                    outputProtocol = OutputProtocolFactory.GetProtocol(outputTransport);
 
-                    if(ServerEventHandler != null)
+                    if (ServerEventHandler != null)
                     {
-                        connectionContext = await ServerEventHandler.CreateContextAsync(inputProtocol,
-                                                                                        outputProtocol,
-                                                                                        cancellationToken);
+                        connectionContext = await ServerEventHandler.CreateContextAsync(inputProtocol, outputProtocol, cancellationToken);
                     }
 
-                    while(!cancellationToken.IsCancellationRequested)
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        if(!await inputTransport.PeekAsync(cancellationToken))
+                        if (!await inputTransport.PeekAsync(cancellationToken))
                         {
                             break;
                         }
 
-                        if(ServerEventHandler != null)
+                        if (ServerEventHandler != null)
                         {
-                            await ServerEventHandler.ProcessContextAsync(connectionContext,
-                                                                         inputTransport,
-                                                                         cancellationToken);
+                            await ServerEventHandler.ProcessContextAsync(connectionContext, inputTransport, cancellationToken);
                         }
 
-                        if(!await processor.ProcessAsync(inputProtocol,
-                                                         outputProtocol,
-                                                         cancellationToken))
+                        if (!await processor.ProcessAsync(inputProtocol, outputProtocol, cancellationToken))
                         {
                             break;
                         }
                     }
                 }
-                catch(TTransportException ttx)
+                catch (TTransportException ttx)
                 {
                     Logger.LogTrace($"Transport exception: {ttx}");
                 }
-                catch(Exception x)
+                catch (Exception x)
                 {
                     Logger.LogError($"Error: {x}");
                 }
 
-                if(ServerEventHandler != null)
+                if (ServerEventHandler != null)
                 {
-                    await ServerEventHandler.DeleteContextAsync(connectionContext,
-                                                                inputProtocol,
-                                                                outputProtocol,
-                                                                cancellationToken);
+                    await ServerEventHandler.DeleteContextAsync(connectionContext, inputProtocol, outputProtocol, cancellationToken);
                 }
+
             }
             finally
             {

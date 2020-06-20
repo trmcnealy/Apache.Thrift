@@ -18,7 +18,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol;
 
 namespace Apache.Thrift
@@ -33,22 +32,24 @@ namespace Apache.Thrift
     {
         private readonly TProtocol _inputProtocol;
         private readonly TProtocol _outputProtocol;
-        private          bool      _isDisposed;
-        private          int       _seqId;
-        public readonly  Guid      ClientId = Guid.NewGuid();
+        private bool _isDisposed;
+        private int _seqId;
+        public readonly Guid ClientId = Guid.NewGuid();
 
-        protected TBaseClient(TProtocol inputProtocol,
-                              TProtocol outputProtocol)
+        protected TBaseClient(TProtocol inputProtocol, TProtocol outputProtocol)
         {
-            _inputProtocol  = inputProtocol  ?? throw new ArgumentNullException(nameof(inputProtocol));
+            _inputProtocol = inputProtocol ?? throw new ArgumentNullException(nameof(inputProtocol));
             _outputProtocol = outputProtocol ?? throw new ArgumentNullException(nameof(outputProtocol));
         }
 
-        public TProtocol InputProtocol { get { return _inputProtocol; } }
+        public TProtocol InputProtocol => _inputProtocol;
 
-        public TProtocol OutputProtocol { get { return _outputProtocol; } }
+        public TProtocol OutputProtocol => _outputProtocol;
 
-        public int SeqId { get { return ++_seqId; } }
+        public int SeqId
+        {
+            get { return ++_seqId; }
+        }
 
         public virtual async Task OpenTransportAsync()
         {
@@ -57,12 +58,12 @@ namespace Apache.Thrift
 
         public virtual async Task OpenTransportAsync(CancellationToken cancellationToken)
         {
-            if(!_inputProtocol.Transport.IsOpen)
+            if (!_inputProtocol.Transport.IsOpen)
             {
                 await _inputProtocol.Transport.OpenAsync(cancellationToken);
             }
 
-            if(!_outputProtocol.Transport.IsOpen)
+            if (!_outputProtocol.Transport.IsOpen)
             {
                 await _outputProtocol.Transport.OpenAsync(cancellationToken);
             }
@@ -75,9 +76,9 @@ namespace Apache.Thrift
 
         protected virtual void Dispose(bool disposing)
         {
-            if(!_isDisposed)
+            if (!_isDisposed)
             {
-                if(disposing)
+                if (disposing)
                 {
                     _inputProtocol?.Dispose();
                     _outputProtocol?.Dispose();

@@ -33,12 +33,12 @@ namespace Apache.Thrift.Collections
         public THashSet(int capacity)
         {
             // TODO: uncomment capacity when NET Standard also implements it
-            Items = new HashSet<T>( /*capacity*/);
+            Items = new HashSet<T>(/*capacity*/);
         }
 
-        public int Count { get { return Items.Count; } }
+        public int Count => Items.Count;
 
-        public bool IsReadOnly { get { return false; } }
+        public bool IsReadOnly => false;
 
         public void Add(T item)
         {
@@ -55,21 +55,19 @@ namespace Apache.Thrift.Collections
             return Items.Contains(item);
         }
 
-        public void CopyTo(T[] array,
-                           int arrayIndex)
+        public void CopyTo(T[] array, int arrayIndex)
         {
-            Items.CopyTo(array,
-                         arrayIndex);
+            Items.CopyTo(array, arrayIndex);
         }
 
-        public IEnumerator GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return Items.GetEnumerator();
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        public IEnumerator<T> GetEnumerator()
         {
-            return ((IEnumerable<T>)Items).GetEnumerator();
+            return ((IEnumerable<T>) Items).GetEnumerator();
         }
 
         public bool Remove(T item)

@@ -29,122 +29,101 @@ namespace Apache.Thrift.Transport.Client
     {
         private bool _isDisposed;
 
-        public TSocketTransport(TcpClient      client,
-                                TConfiguration config)
+
+        public TSocketTransport(TcpClient client, TConfiguration config)
             : base(config)
         {
             TcpClient = client ?? throw new ArgumentNullException(nameof(client));
             SetInputOutputStream();
         }
 
-        public TSocketTransport(IPAddress      host,
-                                int            port,
-                                TConfiguration config,
-                                int            timeout = 0)
+        public TSocketTransport(IPAddress host, int port, TConfiguration config, int timeout = 0)
             : base(config)
         {
             Host = host;
             Port = port;
 
-            TcpClient                = new TcpClient();
+            TcpClient = new TcpClient();
             TcpClient.ReceiveTimeout = TcpClient.SendTimeout = timeout;
             TcpClient.Client.NoDelay = true;
             SetInputOutputStream();
         }
 
-        public TSocketTransport(string         host,
-                                int            port,
-                                TConfiguration config,
-                                int            timeout = 0)
+        public TSocketTransport(string host, int port, TConfiguration config, int timeout = 0)
             : base(config)
         {
             try
             {
-                IPHostEntry entry = Dns.GetHostEntry(host);
+                var entry = Dns.GetHostEntry(host);
+                if (entry.AddressList.Length == 0)
+                    throw new TTransportException(TTransportException.ExceptionType.Unknown, "unable to resolve host name");
 
-                if(entry.AddressList.Length == 0)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                                  "unable to resolve host name");
-                }
-
-                IPAddress addr = entry.AddressList[0];
-
-                Host = new IPAddress(addr.GetAddressBytes(),
-                                     addr.ScopeId);
-
+                Host = entry.AddressList[0];
                 Port = port;
 
-                TcpClient = new TcpClient(host,
-                                          port);
-
+                TcpClient = new TcpClient(host, port);
                 TcpClient.ReceiveTimeout = TcpClient.SendTimeout = timeout;
                 TcpClient.Client.NoDelay = true;
                 SetInputOutputStream();
             }
-            catch(SocketException e)
+            catch (SocketException e)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                              e.Message,
-                                              e);
+                throw new TTransportException(TTransportException.ExceptionType.Unknown, e.Message, e);
             }
         }
 
         private void SetInputOutputStream()
-        {
-            if(IsOpen)
+        { 
+            if (IsOpen)
             {
-                InputStream  = TcpClient.GetStream();
+                InputStream = TcpClient.GetStream();
                 OutputStream = TcpClient.GetStream();
             }
         }
 
         public TcpClient TcpClient { get; private set; }
-
         public IPAddress Host { get; }
-
         public int Port { get; }
 
         public int Timeout
         {
             set
             {
-                if(TcpClient != null)
+                if (TcpClient != null)
                 {
                     TcpClient.ReceiveTimeout = TcpClient.SendTimeout = value;
                 }
             }
         }
 
-        public override bool IsOpen { get { return TcpClient != null && TcpClient.Connected; } }
+        public override bool IsOpen
+        {
+            get
+            {
+                return (TcpClient != null) && TcpClient.Connected;
+            }
+        }
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsOpen)
             {
-                await Task.FromCanceled(cancellationToken);
+                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
             }
 
-            if(IsOpen)
+            if (Port <= 0)
             {
-                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen,
-                                              "Socket already connected");
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
             }
 
-            if(Port <= 0)
-            {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                                              "Cannot open without port");
-            }
-
-            if(TcpClient == null)
+            if (TcpClient == null)
             {
                 throw new InvalidOperationException("Invalid or not initialized tcp client");
             }
 
-            await TcpClient.ConnectAsync(Host,
-                                         Port);
-
+            await TcpClient.ConnectAsync(Host, Port);
             SetInputOutputStream();
         }
 
@@ -152,7 +131,7 @@ namespace Apache.Thrift.Transport.Client
         {
             base.Close();
 
-            if(TcpClient != null)
+            if (TcpClient != null)
             {
                 TcpClient.Dispose();
                 TcpClient = null;
@@ -162,16 +141,15 @@ namespace Apache.Thrift.Transport.Client
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if(!_isDisposed)
+            if (!_isDisposed)
             {
-                if(disposing)
+                if (disposing)
                 {
                     TcpClient?.Dispose();
 
                     base.Dispose(disposing);
                 }
             }
-
             _isDisposed = true;
         }
     }

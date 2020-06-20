@@ -20,16 +20,14 @@ namespace Apache.Thrift.Protocol.Entities
     // ReSharper disable once InconsistentNaming
     public struct TSet
     {
-        public TSet(TType elementType,
-                    int   count)
+        public TSet(TType elementType, int count)
         {
             ElementType = elementType;
-            Count       = count;
+            Count = count;
         }
 
         public TSet(TList list)
-            : this(list.ElementType,
-                   list.Count)
+            : this(list.ElementType, list.Count)
         {
         }
 

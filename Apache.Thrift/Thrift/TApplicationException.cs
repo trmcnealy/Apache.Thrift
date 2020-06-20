@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation(ASF) under one
+// Licensed to the Apache Software Foundation(ASF) under one
 // or more contributor license agreements.See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.The ASF licenses this file
@@ -17,7 +17,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol;
 using Apache.Thrift.Protocol.Entities;
 using Apache.Thrift.Protocol.Utilities;
@@ -43,7 +42,7 @@ namespace Apache.Thrift
         }
 
         private const int MessageTypeFieldId = 1;
-        private const int ExTypeFieldId      = 2;
+        private const int ExTypeFieldId = 2;
 
         public ExceptionType Type { get; private set; }
 
@@ -56,64 +55,50 @@ namespace Apache.Thrift
             Type = type;
         }
 
-        public TApplicationException(ExceptionType type,
-                                     string        message)
-            : base(message,
-                   null) // TApplicationException is serializable, but we never serialize InnerException
+        public TApplicationException(ExceptionType type, string message)
+            : base(message, null) // TApplicationException is serializable, but we never serialize InnerException
         {
             Type = type;
         }
 
-        public static async ValueTask<TApplicationException> ReadAsync(TProtocol         inputProtocol,
-                                                                       CancellationToken cancellationToken)
+        public static async ValueTask<TApplicationException> ReadAsync(TProtocol inputProtocol, CancellationToken cancellationToken)
         {
-            string        message = null;
-            ExceptionType type    = ExceptionType.Unknown;
+            string message = null;
+            var type = ExceptionType.Unknown;
 
             await inputProtocol.ReadStructBeginAsync(cancellationToken);
-
-            while(true)
+            while (true)
             {
-                TField field = await inputProtocol.ReadFieldBeginAsync(cancellationToken);
-
-                if(field.Type == TType.Stop)
+                var field = await inputProtocol.ReadFieldBeginAsync(cancellationToken);
+                if (field.Type == TType.Stop)
                 {
                     break;
                 }
 
-                switch(field.ID)
+                switch (field.ID)
                 {
                     case MessageTypeFieldId:
-                        if(field.Type == TType.String)
+                        if (field.Type == TType.String)
                         {
                             message = await inputProtocol.ReadStringAsync(cancellationToken);
                         }
                         else
                         {
-                            await TProtocolUtil.SkipAsync(inputProtocol,
-                                                          field.Type,
-                                                          cancellationToken);
+                            await TProtocolUtil.SkipAsync(inputProtocol, field.Type, cancellationToken);
                         }
-
                         break;
                     case ExTypeFieldId:
-                        if(field.Type == TType.I32)
+                        if (field.Type == TType.I32)
                         {
-                            type = (ExceptionType)await inputProtocol.ReadI32Async(cancellationToken);
+                            type = (ExceptionType) await inputProtocol.ReadI32Async(cancellationToken);
                         }
                         else
                         {
-                            await TProtocolUtil.SkipAsync(inputProtocol,
-                                                          field.Type,
-                                                          cancellationToken);
+                            await TProtocolUtil.SkipAsync(inputProtocol, field.Type, cancellationToken);
                         }
-
                         break;
                     default:
-                        await TProtocolUtil.SkipAsync(inputProtocol,
-                                                      field.Type,
-                                                      cancellationToken);
-
+                        await TProtocolUtil.SkipAsync(inputProtocol, field.Type, cancellationToken);
                         break;
                 }
 
@@ -122,53 +107,38 @@ namespace Apache.Thrift
 
             await inputProtocol.ReadStructEndAsync(cancellationToken);
 
-            return new TApplicationException(type,
-                                             message);
+            return new TApplicationException(type, message);
         }
 
-        public async Task WriteAsync(TProtocol         outputProtocol,
-                                     CancellationToken cancellationToken)
+        public async Task WriteAsync(TProtocol outputProtocol, CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
-            const string messageTypeFieldName           = "message";
-            const string exTypeFieldName                = "exType";
+            const string messageTypeFieldName = "message";
+            const string exTypeFieldName = "exType";
             const string structApplicationExceptionName = "TApplicationException";
 
-            TStruct struc = new TStruct(structApplicationExceptionName);
-            TField  field = new TField();
+            var struc = new TStruct(structApplicationExceptionName);
+            var field = new TField();
 
-            await outputProtocol.WriteStructBeginAsync(struc,
-                                                       cancellationToken);
+            await outputProtocol.WriteStructBeginAsync(struc, cancellationToken);
 
-            if(!string.IsNullOrEmpty(Message))
+            if (!string.IsNullOrEmpty(Message))
             {
                 field.Name = messageTypeFieldName;
                 field.Type = TType.String;
-                field.ID   = MessageTypeFieldId;
-
-                await outputProtocol.WriteFieldBeginAsync(field,
-                                                          cancellationToken);
-
-                await outputProtocol.WriteStringAsync(Message,
-                                                      cancellationToken);
-
+                field.ID = MessageTypeFieldId;
+                await outputProtocol.WriteFieldBeginAsync(field, cancellationToken);
+                await outputProtocol.WriteStringAsync(Message, cancellationToken);
                 await outputProtocol.WriteFieldEndAsync(cancellationToken);
             }
 
             field.Name = exTypeFieldName;
             field.Type = TType.I32;
-            field.ID   = ExTypeFieldId;
+            field.ID = ExTypeFieldId;
 
-            await outputProtocol.WriteFieldBeginAsync(field,
-                                                      cancellationToken);
-
-            await outputProtocol.WriteI32Async((int)Type,
-                                               cancellationToken);
-
+            await outputProtocol.WriteFieldBeginAsync(field, cancellationToken);
+            await outputProtocol.WriteI32Async((int) Type, cancellationToken);
             await outputProtocol.WriteFieldEndAsync(cancellationToken);
             await outputProtocol.WriteFieldStopAsync(cancellationToken);
             await outputProtocol.WriteStructEndAsync(cancellationToken);

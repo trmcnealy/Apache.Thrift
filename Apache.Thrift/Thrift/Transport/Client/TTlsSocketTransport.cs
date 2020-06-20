@@ -31,158 +31,135 @@ namespace Apache.Thrift.Transport.Client
     // ReSharper disable once InconsistentNaming
     public class TTlsSocketTransport : TStreamTransport
     {
-        private readonly X509Certificate2                    _certificate;
+        private readonly X509Certificate2 _certificate;
         private readonly RemoteCertificateValidationCallback _certValidator;
-        private readonly IPAddress                           _host;
-        private readonly bool                                _isServer;
-        private readonly LocalCertificateSelectionCallback   _localCertificateSelectionCallback;
-        private readonly int                                 _port;
-        private readonly SslProtocols                        _sslProtocols;
-        private          TcpClient                           _client;
-        private          SslStream                           _secureStream;
-        private          int                                 _timeout;
+        private readonly IPAddress _host;
+        private readonly bool _isServer;
+        private readonly LocalCertificateSelectionCallback _localCertificateSelectionCallback;
+        private readonly int _port;
+        private readonly SslProtocols _sslProtocols;
+        private TcpClient _client;
+        private SslStream _secureStream;
+        private int _timeout;
 
-        public TTlsSocketTransport(TcpClient                           client,
-                                   TConfiguration                      config,
-                                   X509Certificate2                    certificate,
-                                   bool                                isServer                          = false,
-                                   RemoteCertificateValidationCallback certValidator                     = null,
-                                   LocalCertificateSelectionCallback   localCertificateSelectionCallback = null,
-                                   SslProtocols                        sslProtocols                      = SslProtocols.Tls12)
+        public TTlsSocketTransport(TcpClient client, TConfiguration config,
+            X509Certificate2 certificate, bool isServer = false,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls12)
             : base(config)
         {
-            _client                            = client;
-            _certificate                       = certificate;
-            _certValidator                     = certValidator;
+            _client = client;
+            _certificate = certificate;
+            _certValidator = certValidator;
             _localCertificateSelectionCallback = localCertificateSelectionCallback;
-            _sslProtocols                      = sslProtocols;
-            _isServer                          = isServer;
+            _sslProtocols = sslProtocols;
+            _isServer = isServer;
 
-            if(isServer && certificate == null)
+            if (isServer && certificate == null)
             {
                 throw new ArgumentException("TTlsSocketTransport needs certificate to be used for server",
-                                            nameof(certificate));
+                    nameof(certificate));
             }
 
-            if(IsOpen)
+            if (IsOpen)
             {
-                InputStream  = client.GetStream();
+                InputStream = client.GetStream();
                 OutputStream = client.GetStream();
             }
         }
 
-        public TTlsSocketTransport(IPAddress                           host,
-                                   int                                 port,
-                                   TConfiguration                      config,
-                                   string                              certificatePath,
-                                   RemoteCertificateValidationCallback certValidator                     = null,
-                                   LocalCertificateSelectionCallback   localCertificateSelectionCallback = null,
-                                   SslProtocols                        sslProtocols                      = SslProtocols.Tls12)
-            : this(host,
-                   port,
-                   config,
-                   0,
-                   new X509Certificate2(certificatePath),
-                   certValidator,
-                   localCertificateSelectionCallback,
-                   sslProtocols)
+        public TTlsSocketTransport(IPAddress host, int port, TConfiguration config,
+            string certificatePath,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls12)
+            : this(host, port, config, 0,
+                new X509Certificate2(certificatePath),
+                certValidator,
+                localCertificateSelectionCallback,
+                sslProtocols)
         {
         }
 
-        public TTlsSocketTransport(IPAddress                           host,
-                                   int                                 port,
-                                   TConfiguration                      config,
-                                   X509Certificate2                    certificate                       = null,
-                                   RemoteCertificateValidationCallback certValidator                     = null,
-                                   LocalCertificateSelectionCallback   localCertificateSelectionCallback = null,
-                                   SslProtocols                        sslProtocols                      = SslProtocols.Tls12)
-            : this(host,
-                   port,
-                   config,
-                   0,
-                   certificate,
-                   certValidator,
-                   localCertificateSelectionCallback,
-                   sslProtocols)
+        public TTlsSocketTransport(IPAddress host, int port, TConfiguration config,
+            X509Certificate2 certificate = null,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls12)
+            : this(host, port, config, 0,
+                certificate,
+                certValidator,
+                localCertificateSelectionCallback,
+                sslProtocols)
         {
         }
 
-        public TTlsSocketTransport(IPAddress                           host,
-                                   int                                 port,
-                                   TConfiguration                      config,
-                                   int                                 timeout,
-                                   X509Certificate2                    certificate,
-                                   RemoteCertificateValidationCallback certValidator                     = null,
-                                   LocalCertificateSelectionCallback   localCertificateSelectionCallback = null,
-                                   SslProtocols                        sslProtocols                      = SslProtocols.Tls12)
+        public TTlsSocketTransport(IPAddress host, int port, TConfiguration config, int timeout,
+            X509Certificate2 certificate,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls12)
             : base(config)
         {
-            _host                              = host;
-            _port                              = port;
-            _timeout                           = timeout;
-            _certificate                       = certificate;
-            _certValidator                     = certValidator;
+            _host = host;
+            _port = port;
+            _timeout = timeout;
+            _certificate = certificate;
+            _certValidator = certValidator;
             _localCertificateSelectionCallback = localCertificateSelectionCallback;
-            _sslProtocols                      = sslProtocols;
+            _sslProtocols = sslProtocols;
 
             InitSocket();
         }
 
-        public TTlsSocketTransport(string                              host,
-                                   int                                 port,
-                                   TConfiguration                      config,
-                                   int                                 timeout,
-                                   X509Certificate2                    certificate,
-                                   RemoteCertificateValidationCallback certValidator                     = null,
-                                   LocalCertificateSelectionCallback   localCertificateSelectionCallback = null,
-                                   SslProtocols                        sslProtocols                      = SslProtocols.Tls12)
+        public TTlsSocketTransport(string host, int port, TConfiguration config, int timeout,
+            X509Certificate2 certificate,
+            RemoteCertificateValidationCallback certValidator = null,
+            LocalCertificateSelectionCallback localCertificateSelectionCallback = null,
+            SslProtocols sslProtocols = SslProtocols.Tls12)
             : base(config)
         {
             try
             {
-                IPHostEntry entry = Dns.GetHostEntry(host);
+                var entry = Dns.GetHostEntry(host);
+                if (entry.AddressList.Length == 0)
+                    throw new TTransportException(TTransportException.ExceptionType.Unknown, "unable to resolve host name");
 
-                if(entry.AddressList.Length == 0)
-                {
-                    throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                                  "unable to resolve host name");
-                }
+                var addr = entry.AddressList[0];
 
-                IPAddress addr = entry.AddressList[0];
-
-                _host = new IPAddress(addr.GetAddressBytes(),
-                                      addr.ScopeId);
-
-                _port                              = port;
-                _timeout                           = timeout;
-                _certificate                       = certificate;
-                _certValidator                     = certValidator;
+                _host = new IPAddress(addr.GetAddressBytes(), addr.ScopeId);
+                _port = port;
+                _timeout = timeout;
+                _certificate = certificate;
+                _certValidator = certValidator;
                 _localCertificateSelectionCallback = localCertificateSelectionCallback;
-                _sslProtocols                      = sslProtocols;
+                _sslProtocols = sslProtocols;
 
                 InitSocket();
             }
-            catch(SocketException e)
+            catch (SocketException e)
             {
-                throw new TTransportException(TTransportException.ExceptionType.Unknown,
-                                              e.Message,
-                                              e);
+                throw new TTransportException(TTransportException.ExceptionType.Unknown, e.Message, e);
             }
         }
 
-        public int Timeout { set { _client.ReceiveTimeout = _client.SendTimeout = _timeout = value; } }
+        public int Timeout
+        {
+            set { _client.ReceiveTimeout = _client.SendTimeout = _timeout = value; }
+        }
 
-        public TcpClient TcpClient { get { return _client; } }
+        public TcpClient TcpClient => _client;
 
-        public IPAddress Host { get { return _host; } }
+        public IPAddress Host => _host;
 
-        public int Port { get { return _port; } }
+        public int Port => _port;
 
         public override bool IsOpen
         {
             get
             {
-                if(_client == null)
+                if (_client == null)
                 {
                     return false;
                 }
@@ -193,121 +170,99 @@ namespace Apache.Thrift.Transport.Client
 
         private void InitSocket()
         {
-            _client                = new TcpClient();
+            _client = new TcpClient();
             _client.ReceiveTimeout = _client.SendTimeout = _timeout;
             _client.Client.NoDelay = true;
         }
 
-        private bool DefaultCertificateValidator(object          sender,
-                                                 X509Certificate certificate,
-                                                 X509Chain       chain,
-                                                 SslPolicyErrors sslValidationErrors)
+        private bool DefaultCertificateValidator(object sender, X509Certificate certificate, X509Chain chain,
+            SslPolicyErrors sslValidationErrors)
         {
             return sslValidationErrors == SslPolicyErrors.None;
         }
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
-            if(IsOpen)
+            if (IsOpen)
             {
-                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen,
-                                              "Socket already connected");
+                throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen, "Socket already connected");
             }
 
-            if(_host == null)
+            if (_host == null)
             {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                                              "Cannot open null host");
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open null host");
             }
 
-            if(_port <= 0)
+            if (_port <= 0)
             {
-                throw new TTransportException(TTransportException.ExceptionType.NotOpen,
-                                              "Cannot open without port");
+                throw new TTransportException(TTransportException.ExceptionType.NotOpen, "Cannot open without port");
             }
 
-            if(_client == null)
+            if (_client == null)
             {
                 InitSocket();
             }
 
-            if(_client != null)
+            if (_client != null)
             {
-                await _client.ConnectAsync(_host,
-                                           _port);
-
+                await _client.ConnectAsync(_host, _port);
                 await SetupTlsAsync();
             }
         }
 
         public async Task SetupTlsAsync()
         {
-            RemoteCertificateValidationCallback validator = _certValidator ?? DefaultCertificateValidator;
+            var validator = _certValidator ?? DefaultCertificateValidator;
 
-            if(_localCertificateSelectionCallback != null)
+            if (_localCertificateSelectionCallback != null)
             {
-                _secureStream = new SslStream(_client.GetStream(),
-                                              false,
-                                              validator,
-                                              _localCertificateSelectionCallback);
+                _secureStream = new SslStream(_client.GetStream(), false, validator, _localCertificateSelectionCallback);
             }
             else
             {
-                _secureStream = new SslStream(_client.GetStream(),
-                                              false,
-                                              validator);
+                _secureStream = new SslStream(_client.GetStream(), false, validator);
             }
 
             try
             {
-                if(_isServer)
+                if (_isServer)
                 {
                     // Server authentication
-                    await _secureStream.AuthenticateAsServerAsync(_certificate,
-                                                                  _certValidator != null,
-                                                                  _sslProtocols,
-                                                                  true);
+                    await
+                        _secureStream.AuthenticateAsServerAsync(_certificate, _certValidator != null, _sslProtocols,
+                            true);
                 }
                 else
                 {
                     // Client authentication
-                    X509CertificateCollection certs = _certificate != null
-                                                          ? new X509CertificateCollection
-                                                          {
-                                                              _certificate
-                                                          }
-                                                          : new X509CertificateCollection();
+                    var certs = _certificate != null
+                        ? new X509CertificateCollection {_certificate}
+                        : new X509CertificateCollection();
 
-                    string targetHost = _host.ToString();
-
-                    await _secureStream.AuthenticateAsClientAsync(targetHost,
-                                                                  certs,
-                                                                  _sslProtocols,
-                                                                  true);
+                    var targetHost = _host.ToString();
+                    await _secureStream.AuthenticateAsClientAsync(targetHost, certs, _sslProtocols, true);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 Close();
-
                 throw;
             }
 
-            InputStream  = _secureStream;
+            InputStream = _secureStream;
             OutputStream = _secureStream;
         }
 
         public override void Close()
         {
             base.Close();
-
-            if(_client != null)
+            if (_client != null)
             {
                 _client.Dispose();
                 _client = null;
             }
 
-            if(_secureStream != null)
+            if (_secureStream != null)
             {
                 _secureStream.Dispose();
                 _secureStream = null;

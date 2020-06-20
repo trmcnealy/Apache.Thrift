@@ -8,7 +8,7 @@ namespace Apache.Thrift.Transport
     {
         public readonly TTransport InnerTransport;
 
-        public override TConfiguration Configuration { get { return InnerTransport.Configuration; } }
+        public override TConfiguration Configuration { get => InnerTransport.Configuration; }
 
         public TLayeredTransport(TTransport transport)
         {

@@ -20,12 +20,10 @@ namespace Apache.Thrift.Protocol.Entities
     // ReSharper disable once InconsistentNaming
     public struct TMessage
     {
-        public TMessage(string       name,
-                        TMessageType type,
-                        int          seqid)
+        public TMessage(string name, TMessageType type, int seqid)
         {
-            Name  = name;
-            Type  = type;
+            Name = name;
+            Type = type;
             SeqID = seqid;
         }
 

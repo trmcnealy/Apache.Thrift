@@ -20,9 +20,9 @@ namespace Apache.Thrift.Protocol.Entities
     // ReSharper disable once InconsistentNaming
     public enum TMessageType
     {
-        Call      = 1,
-        Reply     = 2,
+        Call = 1,
+        Reply = 2,
         Exception = 3,
-        Oneway    = 4
+        Oneway = 4
     }
 }

@@ -17,7 +17,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol;
 using Apache.Thrift.Transport;
 
@@ -39,23 +38,17 @@ namespace Apache.Thrift.Server
         /// <summary>
         ///     Called when a new client has connected and is about to being processing */
         /// </summary>
-        Task<object> CreateContextAsync(TProtocol         input,
-                                        TProtocol         output,
-                                        CancellationToken cancellationToken);
+        Task<object> CreateContextAsync(TProtocol input, TProtocol output, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Called when a client has finished request-handling to delete server context */
         /// </summary>
-        Task DeleteContextAsync(object            serverContext,
-                                TProtocol         input,
-                                TProtocol         output,
-                                CancellationToken cancellationToken);
+        Task DeleteContextAsync(object serverContext, TProtocol input, TProtocol output,
+            CancellationToken cancellationToken);
 
         /// <summary>
         ///     Called when a client is about to call the processor */
         /// </summary>
-        Task ProcessContextAsync(object            serverContext,
-                                 TTransport        transport,
-                                 CancellationToken cancellationToken);
+        Task ProcessContextAsync(object serverContext, TTransport transport, CancellationToken cancellationToken);
     }
 }

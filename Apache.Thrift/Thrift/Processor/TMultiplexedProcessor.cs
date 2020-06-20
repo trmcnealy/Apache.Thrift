@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol;
 using Apache.Thrift.Protocol.Entities;
 
@@ -31,144 +30,106 @@ namespace Apache.Thrift.Processor
     {
         //TODO: Localization
 
-        private readonly Dictionary<string, ITAsyncProcessor> _serviceProcessorMap = new Dictionary<string, ITAsyncProcessor>();
+        private readonly Dictionary<string, ITAsyncProcessor> _serviceProcessorMap =
+            new Dictionary<string, ITAsyncProcessor>();
 
-        public async Task<bool> ProcessAsync(TProtocol iprot,
-                                             TProtocol oprot)
+        public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot)
         {
-            return await ProcessAsync(iprot,
-                                      oprot,
-                                      CancellationToken.None);
+            return await ProcessAsync(iprot, oprot, CancellationToken.None);
         }
 
-        public async Task<bool> ProcessAsync(TProtocol         iprot,
-                                             TProtocol         oprot,
-                                             CancellationToken cancellationToken)
+        public async Task<bool> ProcessAsync(TProtocol iprot, TProtocol oprot, CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                return await Task.FromCanceled<bool>(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                TMessage message = await iprot.ReadMessageBeginAsync(cancellationToken);
+                var message = await iprot.ReadMessageBeginAsync(cancellationToken);
 
-                if(message.Type != TMessageType.Call && message.Type != TMessageType.Oneway)
+                if ((message.Type != TMessageType.Call) && (message.Type != TMessageType.Oneway))
                 {
-                    await FailAsync(oprot,
-                                    message,
-                                    TApplicationException.ExceptionType.InvalidMessageType,
-                                    "Message exType CALL or ONEWAY expected",
-                                    cancellationToken);
-
+                    await FailAsync(oprot, message, TApplicationException.ExceptionType.InvalidMessageType,
+                        "Message exType CALL or ONEWAY expected", cancellationToken);
                     return false;
                 }
 
                 // Extract the service name
-                int index = message.Name.IndexOf(TMultiplexedProtocol.Separator,
-                                                 StringComparison.Ordinal);
-
-                if(index < 0)
+                var index = message.Name.IndexOf(TMultiplexedProtocol.Separator, StringComparison.Ordinal);
+                if (index < 0)
                 {
-                    await FailAsync(oprot,
-                                    message,
-                                    TApplicationException.ExceptionType.InvalidProtocol,
-                                    $"Service name not found in message name: {message.Name}. Did you forget to use a TMultiplexProtocol in your client?",
-                                    cancellationToken);
-
+                    await FailAsync(oprot, message, TApplicationException.ExceptionType.InvalidProtocol,
+                        $"Service name not found in message name: {message.Name}. Did you forget to use a TMultiplexProtocol in your client?",
+                        cancellationToken);
                     return false;
                 }
 
                 // Create a new TMessage, something that can be consumed by any TProtocol
-                string serviceName = message.Name.Substring(0,
-                                                            index);
-
+                var serviceName = message.Name.Substring(0, index);
                 ITAsyncProcessor actualProcessor;
-
-                if(!_serviceProcessorMap.TryGetValue(serviceName,
-                                                     out actualProcessor))
+                if (!_serviceProcessorMap.TryGetValue(serviceName, out actualProcessor))
                 {
-                    await FailAsync(oprot,
-                                    message,
-                                    TApplicationException.ExceptionType.InternalError,
-                                    $"Service name not found: {serviceName}. Did you forget to call RegisterProcessor()?",
-                                    cancellationToken);
-
+                    await FailAsync(oprot, message, TApplicationException.ExceptionType.InternalError,
+                        $"Service name not found: {serviceName}. Did you forget to call RegisterProcessor()?",
+                        cancellationToken);
                     return false;
                 }
 
                 // Create a new TMessage, removing the service name
-                TMessage newMessage = new TMessage(message.Name.Substring(serviceName.Length + TMultiplexedProtocol.Separator.Length),
-                                                   message.Type,
-                                                   message.SeqID);
+                var newMessage = new TMessage(
+                    message.Name.Substring(serviceName.Length + TMultiplexedProtocol.Separator.Length),
+                    message.Type,
+                    message.SeqID);
 
                 // Dispatch processing to the stored processor
-                return await actualProcessor.ProcessAsync(new StoredMessageProtocol(iprot,
-                                                                                    newMessage),
-                                                          oprot,
-                                                          cancellationToken);
+                return
+                    await
+                        actualProcessor.ProcessAsync(new StoredMessageProtocol(iprot, newMessage), oprot,
+                            cancellationToken);
             }
-            catch(IOException)
+            catch (IOException)
             {
                 return false; // similar to all other processors
             }
         }
 
-        public void RegisterProcessor(string           serviceName,
-                                      ITAsyncProcessor processor)
+        public void RegisterProcessor(string serviceName, ITAsyncProcessor processor)
         {
-            if(_serviceProcessorMap.ContainsKey(serviceName))
+            if (_serviceProcessorMap.ContainsKey(serviceName))
             {
-                throw new InvalidOperationException($"Processor map already contains processor with name: '{serviceName}'");
+                throw new InvalidOperationException(
+                    $"Processor map already contains processor with name: '{serviceName}'");
             }
 
-            _serviceProcessorMap.Add(serviceName,
-                                     processor);
+            _serviceProcessorMap.Add(serviceName, processor);
         }
 
-        private async Task FailAsync(TProtocol                           oprot,
-                                     TMessage                            message,
-                                     TApplicationException.ExceptionType extype,
-                                     string                              etxt,
-                                     CancellationToken                   cancellationToken)
+        private async Task FailAsync(TProtocol oprot, TMessage message, TApplicationException.ExceptionType extype,
+            string etxt, CancellationToken cancellationToken)
         {
-            TApplicationException appex = new TApplicationException(extype,
-                                                                    etxt);
+            var appex = new TApplicationException(extype, etxt);
 
-            TMessage newMessage = new TMessage(message.Name,
-                                               TMessageType.Exception,
-                                               message.SeqID);
+            var newMessage = new TMessage(message.Name, TMessageType.Exception, message.SeqID);
 
-            await oprot.WriteMessageBeginAsync(newMessage,
-                                               cancellationToken);
-
-            await appex.WriteAsync(oprot,
-                                   cancellationToken);
-
+            await oprot.WriteMessageBeginAsync(newMessage, cancellationToken);
+            await appex.WriteAsync(oprot, cancellationToken);
             await oprot.WriteMessageEndAsync(cancellationToken);
             await oprot.Transport.FlushAsync(cancellationToken);
         }
 
         private class StoredMessageProtocol : TProtocolDecorator
         {
-            private readonly TMessage _msgBegin;
+            readonly TMessage _msgBegin;
 
-            public StoredMessageProtocol(TProtocol protocol,
-                                         TMessage  messageBegin)
+            public StoredMessageProtocol(TProtocol protocol, TMessage messageBegin)
                 : base(protocol)
             {
                 _msgBegin = messageBegin;
             }
 
-            public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
+            public override ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
             {
-                if(cancellationToken.IsCancellationRequested)
-                {
-                    return await Task.FromCanceled<TMessage>(cancellationToken);
-                }
-
-                return _msgBegin;
+                cancellationToken.ThrowIfCancellationRequested();
+                return new ValueTask<TMessage>(_msgBegin);
             }
         }
     }

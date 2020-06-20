@@ -18,9 +18,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.Extensions.Logging;
-
 using Apache.Thrift.Protocol;
 using Apache.Thrift.Transport;
 using Apache.Thrift.Processor;
@@ -30,31 +28,28 @@ namespace Apache.Thrift.Server
     // ReSharper disable once InconsistentNaming
     public abstract class TServer
     {
-        protected readonly ILogger            Logger;
-        protected          TProtocolFactory   InputProtocolFactory;
-        protected          TTransportFactory  InputTransportFactory;
-        protected          ITProcessorFactory ProcessorFactory;
-        protected          TProtocolFactory   OutputProtocolFactory;
-        protected          TTransportFactory  OutputTransportFactory;
+        protected readonly ILogger Logger;
+        protected TProtocolFactory InputProtocolFactory;
+        protected TTransportFactory InputTransportFactory;
+        protected ITProcessorFactory ProcessorFactory;
+        protected TProtocolFactory OutputProtocolFactory;
+        protected TTransportFactory OutputTransportFactory;
 
         protected TServerEventHandler ServerEventHandler;
-        protected TServerTransport    ServerTransport;
+        protected TServerTransport ServerTransport;
 
-        protected TServer(ITProcessorFactory processorFactory,
-                          TServerTransport   serverTransport,
-                          TTransportFactory  inputTransportFactory,
-                          TTransportFactory  outputTransportFactory,
-                          TProtocolFactory   inputProtocolFactory,
-                          TProtocolFactory   outputProtocolFactory,
-                          ILogger            logger = null)
+        protected TServer(ITProcessorFactory processorFactory, TServerTransport serverTransport,
+            TTransportFactory inputTransportFactory, TTransportFactory outputTransportFactory,
+            TProtocolFactory inputProtocolFactory, TProtocolFactory outputProtocolFactory,
+            ILogger logger = null)
         {
-            ProcessorFactory       = processorFactory ?? throw new ArgumentNullException(nameof(processorFactory));
-            ServerTransport        = serverTransport;
-            InputTransportFactory  = inputTransportFactory  ?? new TTransportFactory();
+            ProcessorFactory = processorFactory ?? throw new ArgumentNullException(nameof(processorFactory));
+            ServerTransport = serverTransport;
+            InputTransportFactory = inputTransportFactory ?? new TTransportFactory();
             OutputTransportFactory = outputTransportFactory ?? new TTransportFactory();
-            InputProtocolFactory   = inputProtocolFactory   ?? throw new ArgumentNullException(nameof(inputProtocolFactory));
-            OutputProtocolFactory  = outputProtocolFactory  ?? throw new ArgumentNullException(nameof(outputProtocolFactory));
-            Logger                 = logger; // null is absolutely legal
+            InputProtocolFactory = inputProtocolFactory ?? throw new ArgumentNullException(nameof(inputProtocolFactory));
+            OutputProtocolFactory = outputProtocolFactory ?? throw new ArgumentNullException(nameof(outputProtocolFactory));
+            Logger = logger; // null is absolutely legal
         }
 
         public void SetEventHandler(TServerEventHandler seh)
@@ -68,12 +63,10 @@ namespace Apache.Thrift.Server
         }
 
         // Log delegation? deprecated, use ILogger 
-        protected void LogError(string msg)
+        protected void LogError( string msg)
         {
-            if(Logger != null)
-            {
+            if (Logger != null)
                 Logger.LogError(msg);
-            }
         }
 
         public abstract void Stop();
@@ -83,12 +76,10 @@ namespace Apache.Thrift.Server
             // do nothing
         }
 
-        public virtual async Task ServeAsync(CancellationToken cancellationToken)
+        public virtual Task ServeAsync(CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
         }
     }
 }

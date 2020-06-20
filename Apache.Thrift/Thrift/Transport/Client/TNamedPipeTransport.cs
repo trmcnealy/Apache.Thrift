@@ -25,64 +25,48 @@ namespace Apache.Thrift.Transport.Client
     // ReSharper disable once InconsistentNaming
     public class TNamedPipeTransport : TEndpointTransport
     {
-        private          NamedPipeClientStream PipeStream;
-        private readonly int                   ConnectTimeout;
+        private NamedPipeClientStream PipeStream;
+        private readonly int ConnectTimeout;
 
-        public TNamedPipeTransport(string         pipe,
-                                   TConfiguration config,
-                                   int            timeout = Timeout.Infinite)
-            : this(".",
-                   pipe,
-                   config,
-                   timeout)
+        public TNamedPipeTransport(string pipe, TConfiguration config, int timeout = Timeout.Infinite) 
+            : this(".", pipe, config, timeout)
         {
         }
 
-        public TNamedPipeTransport(string         server,
-                                   string         pipe,
-                                   TConfiguration config,
-                                   int            timeout = Timeout.Infinite)
+        public TNamedPipeTransport(string server, string pipe, TConfiguration config, int timeout = Timeout.Infinite)
             : base(config)
         {
-            string serverName = string.IsNullOrWhiteSpace(server) ? server : ".";
-            ConnectTimeout = timeout > 0 ? timeout : Timeout.Infinite;
+            var serverName = string.IsNullOrWhiteSpace(server) ? server : ".";
+            ConnectTimeout = (timeout > 0) ? timeout : Timeout.Infinite;
 
-            PipeStream = new NamedPipeClientStream(serverName,
-                                                   pipe,
-                                                   PipeDirection.InOut,
-                                                   PipeOptions.None);
+            PipeStream = new NamedPipeClientStream(serverName, pipe, PipeDirection.InOut, PipeOptions.None);
         }
 
-        public override bool IsOpen { get { return PipeStream != null && PipeStream.IsConnected; } }
+        public override bool IsOpen => PipeStream != null && PipeStream.IsConnected;
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
-            if(IsOpen)
+            if (IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.AlreadyOpen);
             }
 
-            await PipeStream.ConnectAsync(ConnectTimeout,
-                                          cancellationToken);
-
+            await PipeStream.ConnectAsync( ConnectTimeout, cancellationToken);
             ResetConsumedMessageSize();
         }
 
         public override void Close()
         {
-            if(PipeStream != null)
+            if (PipeStream != null)
             {
                 PipeStream.Dispose();
                 PipeStream = null;
             }
         }
 
-        public override async ValueTask<int> ReadAsync(byte[]            buffer,
-                                                       int               offset,
-                                                       int               length,
-                                                       CancellationToken cancellationToken)
+        public override async ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            if(PipeStream == null)
+            if (PipeStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
@@ -91,22 +75,15 @@ namespace Apache.Thrift.Transport.Client
 #if NETSTANDARD2_1
             var numRead = await PipeStream.ReadAsync(new Memory<byte>(buffer, offset, length), cancellationToken);
 #else
-            int numRead = await PipeStream.ReadAsync(buffer,
-                                                     offset,
-                                                     length,
-                                                     cancellationToken);
+            var numRead = await PipeStream.ReadAsync(buffer, offset, length, cancellationToken);
 #endif
             CountConsumedMessageBytes(numRead);
-
             return numRead;
         }
 
-        public override async Task WriteAsync(byte[]            buffer,
-                                              int               offset,
-                                              int               length,
-                                              CancellationToken cancellationToken)
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
-            if(PipeStream == null)
+            if (PipeStream == null)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
@@ -114,39 +91,30 @@ namespace Apache.Thrift.Transport.Client
             // if necessary, send the data in chunks
             // there's a system limit around 0x10000 bytes that we hit otherwise
             // MSDN: "Pipe write operations across a network are limited to 65,535 bytes per write. For more information regarding pipes, see the Remarks section."
-            int nBytes = Math.Min(15 * 4096,
-                                  length); // 16 would exceed the limit
-
-            while(nBytes > 0)
+            var nBytes = Math.Min(15 * 4096, length); // 16 would exceed the limit
+            while (nBytes > 0)
             {
-                await PipeStream.WriteAsync(buffer,
-                                            offset,
-                                            nBytes,
-                                            cancellationToken);
-
+                await PipeStream.WriteAsync(buffer, offset, nBytes, cancellationToken);
                 offset += nBytes;
                 length -= nBytes;
-
-                nBytes = Math.Min(nBytes,
-                                  length);
+                nBytes = Math.Min(nBytes, length);
             }
         }
 
-        public override async Task FlushAsync(CancellationToken cancellationToken)
+        public override Task FlushAsync(CancellationToken cancellationToken)
         {
-            if(cancellationToken.IsCancellationRequested)
-            {
-                await Task.FromCanceled(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             ResetConsumedMessageSize();
+            return Task.CompletedTask;
         }
 
+        
         protected override void Dispose(bool disposing)
         {
-            if(disposing)
+            if(disposing) 
             {
-                PipeStream?.Dispose();
+              PipeStream?.Dispose();
             }
         }
     }

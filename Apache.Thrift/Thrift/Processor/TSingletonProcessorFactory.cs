@@ -30,8 +30,7 @@ namespace Apache.Thrift.Processor
             _asyncProcessor = asyncProcessor;
         }
 
-        public ITAsyncProcessor GetAsyncProcessor(TTransport trans,
-                                                  TServer    baseServer = null)
+        public ITAsyncProcessor GetAsyncProcessor(TTransport trans, TServer baseServer = null)
         {
             return _asyncProcessor;
         }

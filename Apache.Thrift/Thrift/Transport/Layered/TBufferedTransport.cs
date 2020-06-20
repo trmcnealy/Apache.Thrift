@@ -26,10 +26,10 @@ namespace Apache.Thrift.Transport
     // ReSharper disable once InconsistentNaming
     public class TBufferedTransport : TLayeredTransport
     {
-        private readonly int                           DesiredBufferSize;
+        private readonly int DesiredBufferSize;
         private readonly Client.TMemoryBufferTransport ReadBuffer;
         private readonly Client.TMemoryBufferTransport WriteBuffer;
-        private          bool                          IsDisposed;
+        private bool IsDisposed;
 
         public class Factory : TTransportFactory
         {
@@ -40,23 +40,18 @@ namespace Apache.Thrift.Transport
         }
 
         //TODO: should support only specified input transport?
-        public TBufferedTransport(TTransport transport,
-                                  int        bufSize = 1024)
+        public TBufferedTransport(TTransport transport, int bufSize = 1024)
             : base(transport)
         {
-            if(bufSize <= 0)
+            if (bufSize <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(bufSize),
-                                                      "Buffer size must be a positive number.");
+                throw new ArgumentOutOfRangeException(nameof(bufSize), "Buffer size must be a positive number.");
             }
 
             DesiredBufferSize = bufSize;
 
-            WriteBuffer = new Client.TMemoryBufferTransport(InnerTransport.Configuration,
-                                                            bufSize);
-
-            ReadBuffer = new Client.TMemoryBufferTransport(InnerTransport.Configuration,
-                                                           bufSize);
+            WriteBuffer = new Client.TMemoryBufferTransport(InnerTransport.Configuration, bufSize);
+            ReadBuffer = new Client.TMemoryBufferTransport(InnerTransport.Configuration, bufSize);
 
             Debug.Assert(DesiredBufferSize == ReadBuffer.Capacity);
             Debug.Assert(DesiredBufferSize == WriteBuffer.Capacity);
@@ -72,7 +67,7 @@ namespace Apache.Thrift.Transport
             }
         }
 
-        public override bool IsOpen { get { return !IsDisposed && InnerTransport.IsOpen; } }
+        public override bool IsOpen => !IsDisposed && InnerTransport.IsOpen;
 
         public override async Task OpenAsync(CancellationToken cancellationToken)
         {
@@ -88,132 +83,89 @@ namespace Apache.Thrift.Transport
             InnerTransport.Close();
         }
 
-        public override async ValueTask<int> ReadAsync(byte[]            buffer,
-                                                       int               offset,
-                                                       int               length,
-                                                       CancellationToken cancellationToken)
+        public override async ValueTask<int> ReadAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             CheckNotDisposed();
+            ValidateBufferArgs(buffer, offset, length);
 
-            ValidateBufferArgs(buffer,
-                               offset,
-                               length);
-
-            if(!IsOpen)
+            if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            // do we have something buffered?
-            int count = ReadBuffer.Length - ReadBuffer.Position;
 
-            if(count > 0)
+            // do we have something buffered?
+            var count = ReadBuffer.Length - ReadBuffer.Position;
+            if (count > 0)
             {
-                return await ReadBuffer.ReadAsync(buffer,
-                                                  offset,
-                                                  length,
-                                                  cancellationToken);
+                return await ReadBuffer.ReadAsync(buffer, offset, length, cancellationToken);
             }
 
             // does the request even fit into the buffer?
             // Note we test for >= instead of > to avoid nonsense buffering
-            if(length >= ReadBuffer.Capacity)
+            if (length >= ReadBuffer.Capacity)
             {
-                return await InnerTransport.ReadAsync(buffer,
-                                                      offset,
-                                                      length,
-                                                      cancellationToken);
+                return await InnerTransport.ReadAsync(buffer, offset, length, cancellationToken);
             }
 
             // buffer a new chunk of bytes from the underlying transport
             ReadBuffer.Length = ReadBuffer.Capacity;
             ArraySegment<byte> bufSegment;
             ReadBuffer.TryGetBuffer(out bufSegment);
-
-            ReadBuffer.Length = await InnerTransport.ReadAsync(bufSegment.Array,
-                                                               0,
-                                                               bufSegment.Count,
-                                                               cancellationToken);
-
+            ReadBuffer.Length = await InnerTransport.ReadAsync(bufSegment.Array, 0, bufSegment.Count, cancellationToken);
             ReadBuffer.Position = 0;
 
             // deliver the bytes
-            return await ReadBuffer.ReadAsync(buffer,
-                                              offset,
-                                              length,
-                                              cancellationToken);
+            return await ReadBuffer.ReadAsync(buffer, offset, length, cancellationToken);
         }
 
-        public override async Task WriteAsync(byte[]            buffer,
-                                              int               offset,
-                                              int               length,
-                                              CancellationToken cancellationToken)
+
+        public override async Task WriteAsync(byte[] buffer, int offset, int length, CancellationToken cancellationToken)
         {
             CheckNotDisposed();
+            ValidateBufferArgs(buffer, offset, length);
 
-            ValidateBufferArgs(buffer,
-                               offset,
-                               length);
-
-            if(!IsOpen)
+            if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
             // enough space left in buffer?
-            int free = WriteBuffer.Capacity - WriteBuffer.Length;
-
-            if(length > free)
+            var free = WriteBuffer.Capacity - WriteBuffer.Length;
+            if (length > free)
             {
                 ArraySegment<byte> bufSegment;
                 WriteBuffer.TryGetBuffer(out bufSegment);
-
-                await InnerTransport.WriteAsync(bufSegment.Array,
-                                                0,
-                                                bufSegment.Count,
-                                                cancellationToken);
-
+                await InnerTransport.WriteAsync(bufSegment.Array, 0, bufSegment.Count, cancellationToken);
                 WriteBuffer.SetLength(0);
             }
 
             // do the data even fit into the buffer?
             // Note we test for < instead of <= to avoid nonsense buffering
-            if(length < WriteBuffer.Capacity)
+            if (length < WriteBuffer.Capacity)
             {
-                await WriteBuffer.WriteAsync(buffer,
-                                             offset,
-                                             length,
-                                             cancellationToken);
-
+                await WriteBuffer.WriteAsync(buffer, offset, length, cancellationToken);
                 return;
             }
 
             // write thru
-            await InnerTransport.WriteAsync(buffer,
-                                            offset,
-                                            length,
-                                            cancellationToken);
+            await InnerTransport.WriteAsync(buffer, offset, length, cancellationToken);
         }
 
         public override async Task FlushAsync(CancellationToken cancellationToken)
         {
             CheckNotDisposed();
 
-            if(!IsOpen)
+            if (!IsOpen)
             {
                 throw new TTransportException(TTransportException.ExceptionType.NotOpen);
             }
 
-            if(WriteBuffer.Length > 0)
+            if (WriteBuffer.Length > 0)
             {
                 ArraySegment<byte> bufSegment;
                 WriteBuffer.TryGetBuffer(out bufSegment);
-
-                await InnerTransport.WriteAsync(bufSegment.Array,
-                                                0,
-                                                bufSegment.Count,
-                                                cancellationToken);
-
+                await InnerTransport.WriteAsync(bufSegment.Array, 0, bufSegment.Count, cancellationToken);
                 WriteBuffer.SetLength(0);
             }
 
@@ -222,18 +174,18 @@ namespace Apache.Thrift.Transport
 
         public override void CheckReadBytesAvailable(long numBytes)
         {
-            int buffered = ReadBuffer.Length - ReadBuffer.Position;
-
-            if(buffered < numBytes)
+            var buffered = ReadBuffer.Length - ReadBuffer.Position;
+            if (buffered < numBytes)
             {
                 numBytes -= buffered;
                 InnerTransport.CheckReadBytesAvailable(numBytes);
             }
         }
 
+
         private void CheckNotDisposed()
         {
-            if(IsDisposed)
+            if (IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(InnerTransport));
             }
@@ -242,16 +194,15 @@ namespace Apache.Thrift.Transport
         // IDisposable
         protected override void Dispose(bool disposing)
         {
-            if(!IsDisposed)
+            if (!IsDisposed)
             {
-                if(disposing)
+                if (disposing)
                 {
                     ReadBuffer?.Dispose();
                     WriteBuffer?.Dispose();
                     InnerTransport?.Dispose();
                 }
             }
-
             IsDisposed = true;
         }
     }

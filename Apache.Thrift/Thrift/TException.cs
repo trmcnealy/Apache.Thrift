@@ -26,10 +26,8 @@ namespace Apache.Thrift
         {
         }
 
-        public TException(string    message,
-                          Exception inner)
-            : base(message,
-                   inner)
+        public TException(string message, Exception inner)
+            : base(message, inner)
         {
         }
     }

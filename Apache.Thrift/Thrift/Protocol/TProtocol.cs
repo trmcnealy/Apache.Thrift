@@ -19,7 +19,6 @@ using System;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Apache.Thrift.Protocol.Entities;
 using Apache.Thrift.Transport;
 
@@ -28,19 +27,23 @@ namespace Apache.Thrift.Protocol
     // ReSharper disable once InconsistentNaming
     public abstract class TProtocol : IDisposable
     {
-        private   bool _isDisposed;
-        protected int  RecursionDepth;
+        private bool _isDisposed;
+        protected int RecursionDepth;
 
         protected TTransport Trans;
 
+        protected static readonly TStruct AnonymousStruct = new TStruct(string.Empty);
+        protected static readonly TField StopField = new TField() { Type = TType.Stop };
+
+
         protected TProtocol(TTransport trans)
         {
-            Trans          = trans;
+            Trans = trans;
             RecursionLimit = trans.Configuration.RecursionLimit;
             RecursionDepth = 0;
         }
 
-        public TTransport Transport { get { return Trans; } }
+        public TTransport Transport => Trans;
 
         protected int RecursionLimit { get; set; }
 
@@ -51,14 +54,13 @@ namespace Apache.Thrift.Protocol
 
         public void IncrementRecursionDepth()
         {
-            if(RecursionDepth < RecursionLimit)
+            if (RecursionDepth < RecursionLimit)
             {
                 ++RecursionDepth;
             }
             else
             {
-                throw new TProtocolException(TProtocolException.DEPTH_LIMIT,
-                                             "Depth limit exceeded");
+                throw new TProtocolException(TProtocolException.DEPTH_LIMIT, "Depth limit exceeded");
             }
         }
 
@@ -69,16 +71,16 @@ namespace Apache.Thrift.Protocol
 
         protected virtual void Dispose(bool disposing)
         {
-            if(!_isDisposed)
+            if (!_isDisposed)
             {
-                if(disposing)
+                if (disposing)
                 {
                     (Trans as IDisposable)?.Dispose();
                 }
             }
-
             _isDisposed = true;
         }
+
 
         protected void CheckReadBytesAvailable(TSet set)
         {
@@ -92,339 +94,102 @@ namespace Apache.Thrift.Protocol
 
         protected void CheckReadBytesAvailable(TMap map)
         {
-            int elmSize = GetMinSerializedSize(map.KeyType) + GetMinSerializedSize(map.ValueType);
+            var elmSize = GetMinSerializedSize(map.KeyType) + GetMinSerializedSize(map.ValueType);
             Transport.CheckReadBytesAvailable(map.Count * elmSize);
         }
 
         // Returns the minimum amount of bytes needed to store the smallest possible instance of TType.
         public abstract int GetMinSerializedSize(TType type);
 
-        public virtual async Task WriteMessageBeginAsync(TMessage message)
+
+        public abstract Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteMessageEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task WriteStructBeginAsync(TStruct @struct, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteStructEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken = default);
+                
+        public abstract Task WriteFieldEndAsync(CancellationToken cancellationToken = default);
+                
+        public abstract Task WriteFieldStopAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteMapEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task WriteListBeginAsync(TList list, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteListEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteSetEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task WriteBoolAsync(bool b, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteByteAsync(sbyte b, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteI16Async(short i16, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteI32Async(int i32, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteI64Async(long i64, CancellationToken cancellationToken = default);
+
+        public abstract Task WriteDoubleAsync(double d, CancellationToken cancellationToken = default);
+
+        public virtual async Task WriteStringAsync(string s, CancellationToken cancellationToken = default)
         {
-            await WriteMessageBeginAsync(message,
-                                         CancellationToken.None);
+            var bytes = Encoding.UTF8.GetBytes(s);
+            await WriteBinaryAsync(bytes, cancellationToken);
         }
 
-        public abstract Task WriteMessageBeginAsync(TMessage          message,
-                                                    CancellationToken cancellationToken);
+        public abstract Task WriteBinaryAsync(byte[] bytes, CancellationToken cancellationToken = default);
 
-        public virtual async Task WriteMessageEndAsync()
+        public abstract ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task ReadMessageEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task ReadStructEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<TField> ReadFieldBeginAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task ReadFieldEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<TMap> ReadMapBeginAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task ReadMapEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task ReadListEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<TSet> ReadSetBeginAsync(CancellationToken cancellationToken = default);
+
+        public abstract Task ReadSetEndAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<bool> ReadBoolAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<sbyte> ReadByteAsync(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<short> ReadI16Async(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<int> ReadI32Async(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<long> ReadI64Async(CancellationToken cancellationToken = default);
+
+        public abstract ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken = default);
+
+        public virtual async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken = default)
         {
-            await WriteMessageEndAsync(CancellationToken.None);
+            var buf = await ReadBinaryAsync(cancellationToken);
+            return Encoding.UTF8.GetString(buf, 0, buf.Length);
         }
 
-        public abstract Task WriteMessageEndAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteStructBeginAsync(TStruct @struct)
-        {
-            await WriteStructBeginAsync(@struct,
-                                        CancellationToken.None);
-        }
-
-        public abstract Task WriteStructBeginAsync(TStruct           @struct,
-                                                   CancellationToken cancellationToken);
-
-        public virtual async Task WriteStructEndAsync()
-        {
-            await WriteStructEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task WriteStructEndAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteFieldBeginAsync(TField field)
-        {
-            await WriteFieldBeginAsync(field,
-                                       CancellationToken.None);
-        }
-
-        public abstract Task WriteFieldBeginAsync(TField            field,
-                                                  CancellationToken cancellationToken);
-
-        public virtual async Task WriteFieldEndAsync()
-        {
-            await WriteFieldEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task WriteFieldEndAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteFieldStopAsync()
-        {
-            await WriteFieldStopAsync(CancellationToken.None);
-        }
-
-        public abstract Task WriteFieldStopAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteMapBeginAsync(TMap map)
-        {
-            await WriteMapBeginAsync(map,
-                                     CancellationToken.None);
-        }
-
-        public abstract Task WriteMapBeginAsync(TMap              map,
-                                                CancellationToken cancellationToken);
-
-        public virtual async Task WriteMapEndAsync()
-        {
-            await WriteMapEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task WriteMapEndAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteListBeginAsync(TList list)
-        {
-            await WriteListBeginAsync(list,
-                                      CancellationToken.None);
-        }
-
-        public abstract Task WriteListBeginAsync(TList             list,
-                                                 CancellationToken cancellationToken);
-
-        public virtual async Task WriteListEndAsync()
-        {
-            await WriteListEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task WriteListEndAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteSetBeginAsync(TSet set)
-        {
-            await WriteSetBeginAsync(set,
-                                     CancellationToken.None);
-        }
-
-        public abstract Task WriteSetBeginAsync(TSet              set,
-                                                CancellationToken cancellationToken);
-
-        public virtual async Task WriteSetEndAsync()
-        {
-            await WriteSetEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task WriteSetEndAsync(CancellationToken cancellationToken);
-
-        public virtual async Task WriteBoolAsync(bool b)
-        {
-            await WriteBoolAsync(b,
-                                 CancellationToken.None);
-        }
-
-        public abstract Task WriteBoolAsync(bool              b,
-                                            CancellationToken cancellationToken);
-
-        public virtual async Task WriteByteAsync(sbyte b)
-        {
-            await WriteByteAsync(b,
-                                 CancellationToken.None);
-        }
-
-        public abstract Task WriteByteAsync(sbyte             b,
-                                            CancellationToken cancellationToken);
-
-        public virtual async Task WriteI16Async(short i16)
-        {
-            await WriteI16Async(i16,
-                                CancellationToken.None);
-        }
-
-        public abstract Task WriteI16Async(short             i16,
-                                           CancellationToken cancellationToken);
-
-        public virtual async Task WriteI32Async(int i32)
-        {
-            await WriteI32Async(i32,
-                                CancellationToken.None);
-        }
-
-        public abstract Task WriteI32Async(int               i32,
-                                           CancellationToken cancellationToken);
-
-        public virtual async Task WriteI64Async(long i64)
-        {
-            await WriteI64Async(i64,
-                                CancellationToken.None);
-        }
-
-        public abstract Task WriteI64Async(long              i64,
-                                           CancellationToken cancellationToken);
-
-        public virtual async Task WriteDoubleAsync(double d)
-        {
-            await WriteDoubleAsync(d,
-                                   CancellationToken.None);
-        }
-
-        public abstract Task WriteDoubleAsync(double            d,
-                                              CancellationToken cancellationToken);
-
-        public virtual async Task WriteStringAsync(string s)
-        {
-            await WriteStringAsync(s,
-                                   CancellationToken.None);
-        }
-
-        public virtual async Task WriteStringAsync(string            s,
-                                                   CancellationToken cancellationToken)
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(s);
-
-            await WriteBinaryAsync(bytes,
-                                   cancellationToken);
-        }
-
-        public virtual async Task WriteBinaryAsync(byte[] bytes)
-        {
-            await WriteBinaryAsync(bytes,
-                                   CancellationToken.None);
-        }
-
-        public abstract Task WriteBinaryAsync(byte[]            bytes,
-                                              CancellationToken cancellationToken);
-
-        public virtual async ValueTask<TMessage> ReadMessageBeginAsync()
-        {
-            return await ReadMessageBeginAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken);
-
-        public virtual async Task ReadMessageEndAsync()
-        {
-            await ReadMessageEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task ReadMessageEndAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<TStruct> ReadStructBeginAsync()
-        {
-            return await ReadStructBeginAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken);
-
-        public virtual async Task ReadStructEndAsync()
-        {
-            await ReadStructEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task ReadStructEndAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<TField> ReadFieldBeginAsync()
-        {
-            return await ReadFieldBeginAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<TField> ReadFieldBeginAsync(CancellationToken cancellationToken);
-
-        public virtual async Task ReadFieldEndAsync()
-        {
-            await ReadFieldEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task ReadFieldEndAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<TMap> ReadMapBeginAsync()
-        {
-            return await ReadMapBeginAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<TMap> ReadMapBeginAsync(CancellationToken cancellationToken);
-
-        public virtual async Task ReadMapEndAsync()
-        {
-            await ReadMapEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task ReadMapEndAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<TList> ReadListBeginAsync()
-        {
-            return await ReadListBeginAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken);
-
-        public virtual async Task ReadListEndAsync()
-        {
-            await ReadListEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task ReadListEndAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<TSet> ReadSetBeginAsync()
-        {
-            return await ReadSetBeginAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<TSet> ReadSetBeginAsync(CancellationToken cancellationToken);
-
-        public virtual async Task ReadSetEndAsync()
-        {
-            await ReadSetEndAsync(CancellationToken.None);
-        }
-
-        public abstract Task ReadSetEndAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<bool> ReadBoolAsync()
-        {
-            return await ReadBoolAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<bool> ReadBoolAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<sbyte> ReadByteAsync()
-        {
-            return await ReadByteAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<sbyte> ReadByteAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<short> ReadI16Async()
-        {
-            return await ReadI16Async(CancellationToken.None);
-        }
-
-        public abstract ValueTask<short> ReadI16Async(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<int> ReadI32Async()
-        {
-            return await ReadI32Async(CancellationToken.None);
-        }
-
-        public abstract ValueTask<int> ReadI32Async(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<long> ReadI64Async()
-        {
-            return await ReadI64Async(CancellationToken.None);
-        }
-
-        public abstract ValueTask<long> ReadI64Async(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<double> ReadDoubleAsync()
-        {
-            return await ReadDoubleAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken);
-
-        public virtual async ValueTask<string> ReadStringAsync()
-        {
-            return await ReadStringAsync(CancellationToken.None);
-        }
-
-        public virtual async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken)
-        {
-            byte[] buf = await ReadBinaryAsync(cancellationToken);
-
-            return Encoding.UTF8.GetString(buf,
-                                           0,
-                                           buf.Length);
-        }
-
-        public virtual async ValueTask<byte[]> ReadBinaryAsync()
-        {
-            return await ReadBinaryAsync(CancellationToken.None);
-        }
-
-        public abstract ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken);
+        public abstract ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken = default);
     }
 }

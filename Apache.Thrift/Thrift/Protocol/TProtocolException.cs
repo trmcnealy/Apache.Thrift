@@ -16,7 +16,6 @@
 // under the License.
 
 // ReSharper disable InconsistentNaming
-
 using System;
 
 namespace Apache.Thrift.Protocol
@@ -24,13 +23,13 @@ namespace Apache.Thrift.Protocol
     public class TProtocolException : TException
     {
         // do not rename public constants - they used in generated files
-        public const int UNKNOWN         = 0;
-        public const int INVALID_DATA    = 1;
-        public const int NEGATIVE_SIZE   = 2;
-        public const int SIZE_LIMIT      = 3;
-        public const int BAD_VERSION     = 4;
+        public const int UNKNOWN = 0;
+        public const int INVALID_DATA = 1;
+        public const int NEGATIVE_SIZE = 2;
+        public const int SIZE_LIMIT = 3;
+        public const int BAD_VERSION = 4;
         public const int NOT_IMPLEMENTED = 5;
-        public const int DEPTH_LIMIT     = 6;
+        public const int DEPTH_LIMIT = 6;
 
         protected int Type = UNKNOWN;
 
@@ -38,27 +37,20 @@ namespace Apache.Thrift.Protocol
         {
         }
 
-        public TProtocolException(int       type,
-                                  Exception inner = null)
-            : base(string.Empty,
-                   inner)
+        public TProtocolException(int type, Exception inner = null)
+            : base(string.Empty, inner)
         {
             Type = type;
         }
 
-        public TProtocolException(int       type,
-                                  string    message,
-                                  Exception inner = null)
-            : base(message,
-                   inner)
+        public TProtocolException(int type, string message, Exception inner = null)
+            : base(message, inner)
         {
             Type = type;
         }
 
-        public TProtocolException(string    message,
-                                  Exception inner = null)
-            : base(message,
-                   inner)
+        public TProtocolException(string message, Exception inner = null)
+            : base(message, inner)
         {
         }
 

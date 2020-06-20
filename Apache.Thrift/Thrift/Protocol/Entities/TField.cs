@@ -20,13 +20,11 @@ namespace Apache.Thrift.Protocol.Entities
     // ReSharper disable once InconsistentNaming
     public struct TField
     {
-        public TField(string name,
-                      TType  type,
-                      short  id)
+        public TField(string name, TType type, short id)
         {
             Name = name;
             Type = type;
-            ID   = id;
+            ID = id;
         }
 
         public string Name { get; set; }
