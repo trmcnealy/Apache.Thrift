@@ -136,7 +136,7 @@ namespace Apache.Thrift.Transport.Client
         {
             var handler = new HttpClientHandler();
             handler.ClientCertificates.AddRange(_certificates);
-            handler.AutomaticDecompression = System.Net.DecompressionMethods.None |System.Net.DecompressionMethods.Deflate | System.Net.DecompressionMethods.GZip;
+            handler.AutomaticDecompression = System.Net.DecompressionMethods.Deflate | System.Net.DecompressionMethods.GZip;
 
             var httpClient = new HttpClient(handler);
 

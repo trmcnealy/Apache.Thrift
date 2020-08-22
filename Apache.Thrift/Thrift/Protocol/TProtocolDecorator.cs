@@ -39,207 +39,207 @@ namespace Apache.Thrift.Protocol
             _wrappedProtocol = protocol ?? throw new ArgumentNullException(nameof(protocol));
         }
 
-        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken = default)
+        public override async Task WriteMessageBeginAsync(TMessage message, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteMessageBeginAsync(message, cancellationToken);
         }
 
-        public override async Task WriteMessageEndAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteMessageEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteMessageEndAsync(cancellationToken);
         }
 
-        public override async Task WriteStructBeginAsync(TStruct @struct, CancellationToken cancellationToken = default)
+        public override async Task WriteStructBeginAsync(TStruct @struct, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteStructBeginAsync(@struct, cancellationToken);
         }
 
-        public override async Task WriteStructEndAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteStructEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteStructEndAsync(cancellationToken);
         }
 
-        public override async Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken = default)
+        public override async Task WriteFieldBeginAsync(TField field, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteFieldBeginAsync(field, cancellationToken);
         }
 
-        public override async Task WriteFieldEndAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteFieldEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteFieldEndAsync(cancellationToken);
         }
 
-        public override async Task WriteFieldStopAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteFieldStopAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteFieldStopAsync(cancellationToken);
         }
 
-        public override async Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken = default)
+        public override async Task WriteMapBeginAsync(TMap map, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteMapBeginAsync(map, cancellationToken);
         }
 
-        public override async Task WriteMapEndAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteMapEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteMapEndAsync(cancellationToken);
         }
 
-        public override async Task WriteListBeginAsync(TList list, CancellationToken cancellationToken = default)
+        public override async Task WriteListBeginAsync(TList list, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteListBeginAsync(list, cancellationToken);
         }
 
-        public override async Task WriteListEndAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteListEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteListEndAsync(cancellationToken);
         }
 
-        public override async Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken = default)
+        public override async Task WriteSetBeginAsync(TSet set, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteSetBeginAsync(set, cancellationToken);
         }
 
-        public override async Task WriteSetEndAsync(CancellationToken cancellationToken = default)
+        public override async Task WriteSetEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteSetEndAsync(cancellationToken);
         }
 
-        public override async Task WriteBoolAsync(bool b, CancellationToken cancellationToken = default)
+        public override async Task WriteBoolAsync(bool b, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteBoolAsync(b, cancellationToken);
         }
 
-        public override async Task WriteByteAsync(sbyte b, CancellationToken cancellationToken = default)
+        public override async Task WriteByteAsync(sbyte b, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteByteAsync(b, cancellationToken);
         }
 
-        public override async Task WriteI16Async(short i16, CancellationToken cancellationToken = default)
+        public override async Task WriteI16Async(short i16, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteI16Async(i16, cancellationToken);
         }
 
-        public override async Task WriteI32Async(int i32, CancellationToken cancellationToken = default)
+        public override async Task WriteI32Async(int i32, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteI32Async(i32, cancellationToken);
         }
 
-        public override async Task WriteI64Async(long i64, CancellationToken cancellationToken = default)
+        public override async Task WriteI64Async(long i64, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteI64Async(i64, cancellationToken);
         }
 
-        public override async Task WriteDoubleAsync(double d, CancellationToken cancellationToken = default)
+        public override async Task WriteDoubleAsync(double d, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteDoubleAsync(d, cancellationToken);
         }
 
-        public override async Task WriteStringAsync(string s, CancellationToken cancellationToken = default)
+        public override async Task WriteStringAsync(string s, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteStringAsync(s, cancellationToken);
         }
 
-        public override async Task WriteBinaryAsync(byte[] bytes, CancellationToken cancellationToken = default)
+        public override async Task WriteBinaryAsync(byte[] bytes, CancellationToken cancellationToken)
         {
             await _wrappedProtocol.WriteBinaryAsync(bytes, cancellationToken);
         }
 
-        public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<TMessage> ReadMessageBeginAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadMessageBeginAsync(cancellationToken);
         }
 
-        public override async Task ReadMessageEndAsync(CancellationToken cancellationToken = default)
+        public override async Task ReadMessageEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.ReadMessageEndAsync(cancellationToken);
         }
 
-        public override async ValueTask<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<TStruct> ReadStructBeginAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadStructBeginAsync(cancellationToken);
         }
 
-        public override async Task ReadStructEndAsync(CancellationToken cancellationToken = default)
+        public override async Task ReadStructEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.ReadStructEndAsync(cancellationToken);
         }
 
-        public override async ValueTask<TField> ReadFieldBeginAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<TField> ReadFieldBeginAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadFieldBeginAsync(cancellationToken);
         }
 
-        public override async Task ReadFieldEndAsync(CancellationToken cancellationToken = default)
+        public override async Task ReadFieldEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.ReadFieldEndAsync(cancellationToken);
         }
 
-        public override async ValueTask<TMap> ReadMapBeginAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<TMap> ReadMapBeginAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadMapBeginAsync(cancellationToken);
         }
 
-        public override async Task ReadMapEndAsync(CancellationToken cancellationToken = default)
+        public override async Task ReadMapEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.ReadMapEndAsync(cancellationToken);
         }
 
-        public override async ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<TList> ReadListBeginAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadListBeginAsync(cancellationToken);
         }
 
-        public override async Task ReadListEndAsync(CancellationToken cancellationToken = default)
+        public override async Task ReadListEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.ReadListEndAsync(cancellationToken);
         }
 
-        public override async ValueTask<TSet> ReadSetBeginAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<TSet> ReadSetBeginAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadSetBeginAsync(cancellationToken);
         }
 
-        public override async Task ReadSetEndAsync(CancellationToken cancellationToken = default)
+        public override async Task ReadSetEndAsync(CancellationToken cancellationToken)
         {
             await _wrappedProtocol.ReadSetEndAsync(cancellationToken);
         }
 
-        public override async ValueTask<bool> ReadBoolAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<bool> ReadBoolAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadBoolAsync(cancellationToken);
         }
 
-        public override async ValueTask<sbyte> ReadByteAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<sbyte> ReadByteAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadByteAsync(cancellationToken);
         }
 
-        public override async ValueTask<short> ReadI16Async(CancellationToken cancellationToken = default)
+        public override async ValueTask<short> ReadI16Async(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadI16Async(cancellationToken);
         }
 
-        public override async ValueTask<int> ReadI32Async(CancellationToken cancellationToken = default)
+        public override async ValueTask<int> ReadI32Async(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadI32Async(cancellationToken);
         }
 
-        public override async ValueTask<long> ReadI64Async(CancellationToken cancellationToken = default)
+        public override async ValueTask<long> ReadI64Async(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadI64Async(cancellationToken);
         }
 
-        public override async ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<double> ReadDoubleAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadDoubleAsync(cancellationToken);
         }
 
-        public override async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<string> ReadStringAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadStringAsync(cancellationToken);
         }
 
-        public override async ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken = default)
+        public override async ValueTask<byte[]> ReadBinaryAsync(CancellationToken cancellationToken)
         {
             return await _wrappedProtocol.ReadBinaryAsync(cancellationToken);
         }

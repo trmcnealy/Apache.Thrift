@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFrameworks>netstandard2.1;netcoreapp3.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>Apache</RootNamespace>
     <Authors>Timothy R. McNealy</Authors>
@@ -10,11 +10,16 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/trmcnealy/Apache.Thrift</PackageProjectUrl>
     <RepositoryUrl>https://github.com/trmcnealy/Apache.Thrift</RepositoryUrl>
-    <Version>0.3.1</Version>
+    <Version>0.4.0</Version>
     <PackageOutputPath Condition="'$(PACKAGE_CACHE)'!=''">$(PACKAGE_CACHE)</PackageOutputPath>
     <PackageOutputPath Condition="'$(PACKAGE_CACHE)'==''">$(OutputPath)</PackageOutputPath>
     <PackageId>Apache.Thrift.NET</PackageId>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">False</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Thrift\Transport\TZlibTransport.cs" />
+  </ItemGroup>
   
   <ItemGroup>
     <None Remove="Apache.Thrift.csproj.DotSettings" />
@@ -22,13 +27,17 @@
   
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.6" />
     <PackageReference Include="System.IO.Pipes" Version="4.3.0" />
     <PackageReference Include="System.IO.Pipes.AccessControl" Version="4.5.1" />
   </ItemGroup>
   
   <ItemGroup>
     <Folder Include="Thrift\Database\" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="Thrift\Transport\TZlibTransport.cs" />
   </ItemGroup>
   
 </Project>

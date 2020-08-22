@@ -6,7 +6,7 @@ using System.Text;
 namespace Apache.Thrift.Transport
 {
 
-    abstract public class TEndpointTransport : TTransport
+    public abstract class TEndpointTransport : TTransport
     {
         protected long MaxMessageSize { get => Configuration.MaxMessageSize; }
         protected long KnownMessageSize { get; private set; }
