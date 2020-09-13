@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
 
+  <Import Project="$([MSBuild]::GetPathOfFileAbove(GlobalVersioning.props))" />
+
+
   <PropertyGroup>
+    <Version>$(APACHE_THRIFT_VERSION)</Version>
     <TargetFrameworks>netstandard2.1;netcoreapp3.1</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>Apache</RootNamespace>
@@ -10,11 +14,16 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/trmcnealy/Apache.Thrift</PackageProjectUrl>
     <RepositoryUrl>https://github.com/trmcnealy/Apache.Thrift</RepositoryUrl>
-    <Version>0.4.0</Version>
-    <PackageOutputPath Condition="'$(PACKAGE_CACHE)'!=''">$(PACKAGE_CACHE)</PackageOutputPath>
-    <PackageOutputPath Condition="'$(PACKAGE_CACHE)'==''">$(OutputPath)</PackageOutputPath>
     <PackageId>Apache.Thrift.NET</PackageId>
-    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">False</GeneratePackageOnBuild>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- <NuspecFile>MultiPorosityModel.nuspec</NuspecFile> -->
+    <NuspecProperties>$(NUGET_PROPERTIES)</NuspecProperties>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'!='Release'">false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">true</GeneratePackageOnBuild>
+    <PackageOutputPath Condition="'$(PACKAGE_CACHE)'!=''">$(PACKAGE_CACHE)</PackageOutputPath>
+    <PackageOutputPath Condition="'$(PACKAGE_CACHE)'==''">$(OutputPath)</PackageOutputPath>  
   </PropertyGroup>
 
   <ItemGroup>
