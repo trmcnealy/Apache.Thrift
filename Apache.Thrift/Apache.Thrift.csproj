@@ -1,32 +1,35 @@
-<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="Current">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove(GlobalVersioning.props))" />
 
-
   <PropertyGroup>
+    <LangVersion>9.0</LangVersion>
     <Version>$(APACHE_THRIFT_VERSION)</Version>
-    <TargetFrameworks>netstandard2.1;netcoreapp3.1</TargetFrameworks>
+    <TargetFramework>net5.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>Apache</RootNamespace>
-    <Authors>Timothy R. McNealy</Authors>
-    <Company>Timothy R. McNealy</Company>
-    <Copyright>© Timothy R. McNealy</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/trmcnealy/Apache.Thrift</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/trmcnealy/Apache.Thrift</RepositoryUrl>
-    <PackageId>Apache.Thrift.NET</PackageId>
   </PropertyGroup>
   
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Artifacts.props))\Artifacts.props"
+          Condition="'$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), Artifacts.props))' != '' " />
+  
   <PropertyGroup>
-    <!-- <NuspecFile>MultiPorosityModel.nuspec</NuspecFile> -->
+     <NuspecFile>Apache.Thrift.nuspec</NuspecFile> 
     <NuspecProperties>$(NUGET_PROPERTIES)</NuspecProperties>
-    <GeneratePackageOnBuild Condition="'$(Configuration)'!='Release'">false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Debug'">false</GeneratePackageOnBuild>
     <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">true</GeneratePackageOnBuild>
     <PackageOutputPath Condition="'$(PACKAGE_CACHE)'!=''">$(PACKAGE_CACHE)</PackageOutputPath>
     <PackageOutputPath Condition="'$(PACKAGE_CACHE)'==''">$(OutputPath)</PackageOutputPath>  
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="native\**" />
+    <EmbeddedResource Remove="native\**" />
+    <None Remove="native\**" />
+  </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Thrift\Transport\Server\TNamedPipeServerTransport.cs" />
     <Compile Remove="Thrift\Transport\TZlibTransport.cs" />
   </ItemGroup>
   
@@ -36,13 +39,9 @@
   
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
     <PackageReference Include="System.IO.Pipes" Version="4.3.0" />
-    <PackageReference Include="System.IO.Pipes.AccessControl" Version="4.5.1" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Thrift\Database\" />
+    <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
   </ItemGroup>
   
   <ItemGroup>

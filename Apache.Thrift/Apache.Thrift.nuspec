@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+      <id>Apache.Thrift.NET</id>
+      <version>$APACHE_THRIFT$</version>
+      <authors>Timothy R. McNealy</authors>
+      <owners>Timothy R. McNealy</owners>
+      <license type="expression">MIT</license>
+      <projectUrl>https://github.com/trmcnealy/Apache.Thrift</projectUrl>
+      <icon>nindra.png</icon>
+      <requireLicenseAcceptance>false</requireLicenseAcceptance>
+      <description>Apache Thrift .NET</description>
+      <releaseNotes></releaseNotes>
+      <copyright>© Timothy R. McNealy</copyright>
+      <tags></tags>
+    <dependencies>
+      <group targetFramework="net5.0">
+          <dependency id="Microsoft.AspNetCore.Http" version="2.2.2" />
+          <dependency id="Microsoft.Extensions.Logging" version="5.0.0" />
+          <dependency id="System.IO.Pipes" version="4.3.0" />
+          <dependency id="System.IO.Pipes.AccessControl" version="5.0.0" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="E:\TFS_Sources\trmcnealy\trmcnealy.github.io\assets\nindra.png"
+          target=""/>
+
+
+    <file src="E:\TFS_Sources\trmcnealy\Utilities\bin\Release\AnyCPU\net5.0\Apache.Thrift.pdb"
+          target="lib\net5.0"/>
+
+    <file src="E:\TFS_Sources\trmcnealy\Utilities\bin\Release\AnyCPU\net5.0\Apache.Thrift.dll"
+          target="lib\net5.0"/>
+
+
+  </files>
+</package>
